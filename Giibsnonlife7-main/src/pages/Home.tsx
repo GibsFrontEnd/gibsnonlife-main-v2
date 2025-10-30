@@ -22,13 +22,18 @@ const HomePage = () => {
       <div className="overflow-clip pt-28 xl:pt-0">
         <div className="mx-auto grid grid-cols-12 items-center gap-2 md:gap-16 md:px-10 xl:w-[1280px] xl:px-2">
           <div className="col-span-12 px-4 md:col-span-7 md:px-0">
-            <h1 className="text-jump-gradient mb-8 break-words text-5xl font-light tracking-[-0.02em] lg:leading-20 lg:text-7xl">
+            <h1 className="mb-8 break-words text-5xl font-bold tracking-[-0.02em] lg:leading-20 lg:text-7xl bg-gradient-to-r from-blue-400 to-purple-800 bg-clip-text text-transparent animate-fadeInUp">
               Enterprise-Ready Solutions for Modern Businesses
             </h1>
-            <div className="mb-10 text-lg font-light lg:text-3xl">
+            <div
+              className="mb-10 text-lg font-light text-gray-700 lg:text-3xl animate-fadeInUp"
+              style={{ animationDelay: "200ms" }}
+            >
               <p>
-                Custom enterprise HR and insurance systems with flexible
-                deployment options to power your business
+                <strong>
+                  Custom enterprise HR and insurance systems with flexible
+                  deployment options to power your business
+                </strong>
               </p>
             </div>
             <div className="flex items-start gap-4">
@@ -37,7 +42,7 @@ const HomePage = () => {
                 asLink
                 to="/login"
                 data-discover="true"
-                className="min-w-[300px]"
+                className="min-w-[300px] bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
               >
                 Login
               </Button>
