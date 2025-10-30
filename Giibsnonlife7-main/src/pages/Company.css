@@ -37,8 +37,8 @@
 }
 
 .tab.active {
-  color: #dc2626;
-  background-color: #dc2626;
+  color: #3b82f6;
+  background-color: #3b82f6;
   color: white;
   border-radius: 4px 4px 0 0;
 }
@@ -84,27 +84,27 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .tabs-container {
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  
+
   .tabs-container::-webkit-scrollbar {
     display: none;
   }
-  
+
   .tab {
     white-space: nowrap;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
   }
-  
+
   .action-buttons {
     justify-content: center;
   }
