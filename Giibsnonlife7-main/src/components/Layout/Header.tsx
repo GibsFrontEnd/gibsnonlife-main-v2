@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { Button } from "../UI/new-button"
+import { Button } from "../UI/new-button";
 
 const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -10,7 +10,7 @@ const Header: React.FC = () => {
     { title: "Home", link: "/dashboard" },
     { title: "CSU", link: "/csu" },
     { title: "Quotation", link: "/quotations" },
-  { title: "Underwriting", link: "/underwriting" },
+    { title: "Underwriting", link: "/underwriting" },
     { title: "Claims", link: "/claims" },
     { title: "Reinsurance", link: "/re-insurance" },
     { title: "Requisition", link: "/requisition" },
@@ -19,16 +19,17 @@ const Header: React.FC = () => {
     { title: "Admin", link: "/admin" },
   ];
 
-
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.replace("/login");  
-    window.location.replace("/login");  
-    };
-    
-  
+    window.location.replace("/login");
+    window.location.replace("/login");
+  };
+
   return (
-    <header  className="bg-white border-b border-gray-200 px-5 flex items-center justify-between h-16 shadow ml-auto" style={{ backgroundColor: "rgb(255, 206, 187)" }}>
+    <header
+      className="bg-white border-b border-gray-200 px-5 flex items-center justify-between h-16 shadow ml-auto"
+      style={{ backgroundColor: "#155dfd" }}
+    >
       <div className="font-bold text-lg"></div>
 
       <nav className="hidden xl:flex items-center gap-0">
@@ -37,15 +38,22 @@ const Header: React.FC = () => {
             key={index}
             to={item.link}
             className={({ isActive }) =>
-              `px-4 py-2 bg-transparent border-none text-gray-500 text-sm font-medium cursor-pointer transition-all duration-200 ease-in-out border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 ${
-                isActive ? "text-secondary border-b-secondary" : ""
+              `px-4 py-2 bg-transparent border-none text-white text-sm font-medium cursor-pointer transition-all duration-200 ease-in-out border-b-2 border-transparent hover:text-[#e0e7ff] hover:bg-[#0b46d4] ${
+                isActive ? "text-blue-600 border-b-blue-600" : ""
               }`
             }
           >
             {item.title}
           </NavLink>
         ))}
-        <Button onClick={()=>{handleLogout();}} variant="destructive">Logout</Button>
+        <Button
+          onClick={() => {
+            handleLogout();
+          }}
+          variant="destructive"
+        >
+          Logout
+        </Button>
       </nav>
       <button
         className="block xl:hidden w-fit p-2 text-black hover:text-gray-800"

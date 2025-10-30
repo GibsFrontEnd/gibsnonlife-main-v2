@@ -15,7 +15,10 @@ const HomePage = () => {
     //     </Button>
     //   </div>
     // </div>
-    <div className="bg-gradient-to-b from-primary-vividBlueBg to-background" id="home">
+    <div
+      className="bg-gradient-to-b from-primary-vividBlueBg to-background"
+      id="home"
+    >
       <div className="overflow-clip pt-28 xl:pt-0">
         <div className="mx-auto grid grid-cols-12 items-center gap-2 md:gap-16 md:px-10 xl:w-[1280px] xl:px-2">
           <div className="col-span-12 px-4 md:col-span-7 md:px-0">
