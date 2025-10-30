@@ -40,7 +40,6 @@ const LoginPage = () => {
       window.history.go(1);
     };
   }, []);
-    
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -49,7 +48,6 @@ const LoginPage = () => {
     }
  */
   }, [navigate]);
-
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -236,7 +234,7 @@ const LoginPage = () => {
       <div className="md:flex-1 flex flex-col justify-center items-center">
         <h1 className="font-sans text-left text-3xl lg:text-5xl text-neutral-darkCharcoal leading-tight lg:leading-[1.2] mb-4 max-w-5xl mx-auto">
           Welcome back to{" "}
-          <span className="bg-gradient-to-r from-[#dc2626] to-[#9254DE] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-blue-400 to-purple-800 bg-clip-text text-transparent">
             GIBS Enterprise
           </span>
         </h1>
@@ -289,7 +287,7 @@ const LoginPage = () => {
             <Button
               // @ts-ignore
               type="submit"
-              className="w-full bg-primary-blue text-white"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               loading={isLoading}
               disabled={isLoading}
             >
@@ -300,7 +298,7 @@ const LoginPage = () => {
       </div>
       <div className="md:flex-1">
         <div className="bg-neutral-softWhite shadow-navShadow hidden md:block p-6 rounded-lg border border-neutral-lightGray">
-          <span className="text-xs font-semibold text-destructive bg-red-100 px-3 py-1 rounded-full">
+          <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
             WHAT’S NEW
           </span>
           <div className="border relative overflow-hidden rounded-md mt-6">
@@ -317,7 +315,7 @@ const LoginPage = () => {
           </p>
           <Link
             to="/"
-            className="mt-4 inline-block text-primary-vividBlue font-semibold hover:underline"
+            className="mt-4 inline-block text-blue-600 font-semibold hover:underline"
           >
             Check Us Out →
           </Link>

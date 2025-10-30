@@ -9,12 +9,12 @@
   --color-foreground: #020817;
 
   --color-border: #e4e8ef;
-  --color-input: #BFBFBF;
+  --color-input: #bfbfbf;
   --color-ring: #3b82f6;
 
   /* Primary colors */
-  --color-primary: #8B4B8C;
-  --color-primary-blue: #8B4B8C;
+  --color-primary: #8b4b8c;
+  --color-primary-blue: #8b4b8c;
   --color-primary-foreground: #ffffff;
 
   /* Neutral colors */
@@ -22,8 +22,7 @@
   --color-neutral-placeholder: #999;
 
   /* Secondary colors */
-  --color-secondary: #dc2626;
-  --color-secondary-bg: #dc262633;
+  --color-secondary: #3b82f6;
   --color-secondary-foreground: #1e293b;
 
   /* Destructive colors */
@@ -39,7 +38,7 @@
   --color-warning-foreground: #f8fafc;
 
   /* Info colors */
-  --color-info: #8B4B8C;
+  --color-info: #8b4b8c;
   --color-info-foreground: #ffffff;
 
   /* Accent colors */
@@ -83,10 +82,9 @@
   }
 }
 
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

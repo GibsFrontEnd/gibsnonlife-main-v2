@@ -13,18 +13,19 @@ const AdminSidebar = () => {
     { path: "settings", label: "Settings", icon: "⚙️" },
   ];
   const isActive = (itemPath: string) =>
-    location.pathname === `/${itemPath}` || location.pathname.startsWith(`/${itemPath}/`);
+    location.pathname === `/${itemPath}` ||
+    location.pathname.startsWith(`/${itemPath}/`);
 
   return (
     <aside
       className="
         fixed left-0 top-0 bottom-0 z-100
-        bg-primary text-white
+        bg-blue-900 text-white
         flex flex-col
         overflow-y-auto
         md:w-52 max-md:w-15
       "
-    >      
+    >
       <div className="font-bold text-lg pt-5 pl-3 pb-8">GIBS ENTERPRISE 7</div>
       <nav className="flex-1 py-2.5">
         {menuItems.map((item) => (
@@ -33,7 +34,7 @@ const AdminSidebar = () => {
             to={item.path}
             className={`flex items-center py-3 px-5 text-white/80 no-underline transition-all duration-200 border-l-3 border-transparent hover:bg-white/10 hover:text-white max-md:justify-center max-md:py-4 max-md:px-2.5 ${
               location.pathname === item.path
-                ? "bg-white/15 text-white border-l-orange-500"
+                ? "bg-blue-500/15 text-white border-l-blue-300"
                 : ""
             }`}
           >

@@ -41,7 +41,7 @@
 
 .tab.active {
   color: white;
-  background-color: #dc2626;
+  background-color: #3b82f6;
   border-radius: 4px 4px 0 0;
 }
 
@@ -194,22 +194,22 @@
     gap: 15px;
     align-items: stretch;
   }
-  
+
   .search-controls {
     justify-content: center;
   }
-  
+
   .risks-layout {
     grid-template-columns: 1fr;
     gap: 15px;
     padding: 15px;
   }
-  
+
   .table-header {
     grid-template-columns: 1fr 1fr 1fr;
     font-size: 10px;
   }
-  
+
   .header-cell {
     padding: 10px 12px;
   }
