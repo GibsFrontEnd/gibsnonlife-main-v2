@@ -17,7 +17,17 @@ const Header: React.FC = () => {
     { title: "Accounting", link: "/accounting" },
     { title: "Analytics", link: "/analytics" },
     { title: "Admin", link: "/admin" },
-  ];
+  ].filter(
+    (item) =>
+      ![
+        "Underwriting",
+        "Claims",
+        "Reinsurance",
+        "Requisition",
+        "Accounting",
+        "Analytics",
+      ].includes(item.title)
+  );
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -27,30 +37,33 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className="bg-white border-b border-gray-200 px-5 flex items-center justify-between h-16 shadow ml-auto"
+      className="bg-white border-b border-gray-200 flex items-center justify-between h-16 shadow ml-auto pl-5 pr-5 xl:pl-60"
       style={{ backgroundColor: "#155dfd" }}
     >
       <div className="font-bold text-lg"></div>
 
-      <nav className="hidden xl:flex items-center gap-0">
-        {navItems.map((item, index) => (
-          <NavLink
-            key={index}
-            to={item.link}
-            className={({ isActive }) =>
-              `px-4 py-2 bg-transparent border-none text-white text-sm font-medium cursor-pointer transition-all duration-200 ease-in-out border-b-2 border-transparent hover:text-[#e0e7ff] hover:bg-[#0b46d4] ${
-                isActive ? "text-blue-600 border-b-blue-600" : ""
-              }`
-            }
-          >
-            {item.title}
-          </NavLink>
-        ))}
+      <nav className="hidden xl:flex items-center gap-0 flex-1">
+        <div className="flex items-center gap-0">
+          {navItems.map((item, index) => (
+            <NavLink
+              key={index}
+              to={item.link}
+              className={({ isActive }) =>
+                `px-4 py-2 bg-transparent border-none text-white text-sm font-medium cursor-pointer transition-all duration-200 ease-in-out border-b-2 border-transparent hover:text-[#e0e7ff] hover:bg-[#0b46d4] ${
+                  isActive ? "text-blue-600 border-b-blue-600" : ""
+                }`
+              }
+            >
+              {item.title}
+            </NavLink>
+          ))}
+        </div>
         <Button
           onClick={() => {
             handleLogout();
           }}
           variant="destructive"
+          className="ml-auto"
         >
           Logout
         </Button>
