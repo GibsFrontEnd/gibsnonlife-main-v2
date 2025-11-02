@@ -1,15 +1,14 @@
 //@ts-nocheck
 
+import { Filter, Search } from "lucide-react";
 
-import { Filter, Search } from "lucide-react"
+import { useEffect, useState } from "react";
 
-import { useEffect, useState } from "react"
+import { useDispatch, useSelector } from "react-redux";
 
-import { useDispatch, useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom";
 
-import { useNavigate } from "react-router-dom"
-
-import type { RootState } from "../../../features/store"
+import type { RootState } from "../../../features/store";
 
 import {
   fetchProposals,
@@ -18,42 +17,58 @@ import {
   setSelectedRiskFilter,
   deleteProposal,
   fetchProposalReport,
-} from "../../../features/reducers/quoteReducers/quotationSlice"
+} from "../../../features/reducers/quoteReducers/quotationSlice";
 
-import { getAllRisks } from "../../../features/reducers/adminReducers/riskSlice"
+import { getAllRisks } from "../../../features/reducers/adminReducers/riskSlice";
 
-import { Button } from "../../UI/new-button"
+import { Button } from "../../UI/new-button";
 
-import { Input as NewInput } from "../../UI/new-input"
+import { Input as NewInput } from "../../UI/new-input";
 
-import Input from "../../UI/Input"
+import Input from "../../UI/Input";
 
-import "./Quotations.css"
+import "./Quotations.css";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../UI/collapsible"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../../UI/collapsible";
 
-import { Checkbox } from "../../UI/checkbox"
+import { Checkbox } from "../../UI/checkbox";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../UI/new-select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../UI/new-select";
 
 type QuotationsProps = {
-  businessId: string | null
-}
+  businessId: string | null;
+};
 
 const Quotations = ({ businessId }: QuotationsProps) => {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const { proposals, loading, error, searchTerm, activeTab, selectedRiskFilter, pagination } = useSelector(
-    (state: RootState) => state.quotations,
-  )
+  const {
+    proposals,
+    loading,
+    error,
+    searchTerm,
+    activeTab,
+    selectedRiskFilter,
+    pagination,
+  } = useSelector((state: RootState) => state.quotations);
 
-  const { risks } = useSelector((state: RootState) => state.risks)
+  const { risks } = useSelector((state: RootState) => state.risks);
 
-  const [showRiskDropdown, setShowRiskDropdown] = useState(false)
+  const [showRiskDropdown, setShowRiskDropdown] = useState(false);
 
-  const [searchFilter, setSearchFilter] = useState(false)
+  const [searchFilter, setSearchFilter] = useState(false);
 
   const [filterCriteria, setFilterCriteria] = useState({
     searchField: "fullName",
@@ -67,9 +82,10 @@ const Quotations = ({ businessId }: QuotationsProps) => {
     status: "all",
 
     coverCode: "",
-  })
+  });
 
-  const [filteredQuotations, setFilteredQuotations] = useState<any>(null)
+  const [filteredQuotations, setFilteredQuotations] = useState<any>(null);
+  const [selectedProposals, setSelectedProposals] = useState<string[]>([]);
 
   const clearFilters = () => {
     setFilterCriteria({
@@ -84,14 +100,14 @@ const Quotations = ({ businessId }: QuotationsProps) => {
       status: "all",
 
       coverCode: "",
-    })
+    });
 
-    setFilteredQuotations(null)
-  }
+    setFilteredQuotations(null);
+  };
 
   useEffect(() => {
-    dispatch(getAllRisks({ pageNumber: 1, pageSize: 100 }) as any)
-  }, [dispatch])
+    dispatch(getAllRisks({ pageNumber: 1, pageSize: 100 }) as any);
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(
@@ -101,44 +117,44 @@ const Quotations = ({ businessId }: QuotationsProps) => {
         pageSize: pagination.pageSize,
 
         riskClass: "",
-      }) as any,
-    )
-  }, [dispatch, pagination.page, pagination.pageSize, selectedRiskFilter])
+      }) as any
+    );
+  }, [dispatch, pagination.page, pagination.pageSize, selectedRiskFilter]);
 
   const handleSearch = (value: string) => {
-    dispatch(setSearchTerm(value))
-  }
+    dispatch(setSearchTerm(value));
+  };
 
-  const handleTabChange = (tab: "overview" | "drafts" | "calculated" | "converted") => {
-    dispatch(setActiveTab(tab))
-  }
+  const handleTabChange = (
+    tab: "overview" | "drafts" | "calculated" | "converted"
+  ) => {
+    dispatch(setActiveTab(tab));
+  };
 
   useEffect(() => {
-    dispatch(setSelectedRiskFilter(businessId))
-  }, [])
+    dispatch(setSelectedRiskFilter(businessId));
+  }, []);
 
   const handleRiskFilter = (riskID: string | null) => {
-    dispatch(setSelectedRiskFilter(riskID))
+    dispatch(setSelectedRiskFilter(riskID));
 
-    setShowRiskDropdown(false)
-  }
+    setShowRiskDropdown(false);
+  };
 
   const handleCreateProposal = () => {
-    if(businessId)
-    navigate(`/quotations/create/${businessId}`)
-    else
-    navigate("/quotations/create")
-  }
+    if (businessId) navigate(`/quotations/create/${businessId}`);
+    else navigate("/quotations/create");
+  };
 
   const handleEditProposal = (proposalNo: string) => {
-    navigate(`/quotations/edit/${proposalNo}`)
-  }
+    navigate(`/quotations/edit/${proposalNo}`);
+  };
 
   const handleDeleteProposal = (proposalNo: string) => {
     if (window.confirm("Are you sure you want to delete this proposal?")) {
-      dispatch(deleteProposal(proposalNo) as any)
+      dispatch(deleteProposal(proposalNo) as any);
     }
-  }
+  };
 
   const handlePageChange = (newPage: number) => {
     dispatch(
@@ -148,118 +164,174 @@ const Quotations = ({ businessId }: QuotationsProps) => {
         pageSize: pagination.pageSize,
 
         riskClass: selectedRiskFilter || "",
-      }) as any,
-    )
-  }
+      }) as any
+    );
+  };
 
   const filteredProposals = proposals.filter((proposal) => {
-    const safeLower = (val?: string) => val?.toLowerCase() ?? ""
+    const safeLower = (val?: string) => val?.toLowerCase() ?? "";
 
     const matchesSearch =
       safeLower(proposal.proposalNo || "").includes(searchTerm.toLowerCase()) ||
-      safeLower(proposal.insSurname || "").includes(searchTerm.toLowerCase())
+      safeLower(proposal.insSurname || "").includes(searchTerm.toLowerCase());
 
     if (selectedRiskFilter != null) {
       switch (activeTab) {
         case "drafts":
-          return matchesSearch && selectedRiskFilter == proposal.riskID && proposal.transSTATUS === "PENDING"
+          return (
+            matchesSearch &&
+            selectedRiskFilter == proposal.riskID &&
+            proposal.transSTATUS === "PENDING"
+          );
 
         case "calculated":
-          return matchesSearch && selectedRiskFilter == proposal.riskID && proposal.transSTATUS === "CALCULATED"
+          return (
+            matchesSearch &&
+            selectedRiskFilter == proposal.riskID &&
+            proposal.transSTATUS === "CALCULATED"
+          );
 
         case "converted":
-          return matchesSearch && selectedRiskFilter == proposal.riskID && proposal.transSTATUS === "CONVERTED"
+          return (
+            matchesSearch &&
+            selectedRiskFilter == proposal.riskID &&
+            proposal.transSTATUS === "CONVERTED"
+          );
 
         default:
-          return matchesSearch && selectedRiskFilter == proposal.riskID
+          return matchesSearch && selectedRiskFilter == proposal.riskID;
       }
     } else {
       switch (activeTab) {
         case "drafts":
-          return matchesSearch && proposal.transSTATUS === "PENDING"
+          return matchesSearch && proposal.transSTATUS === "PENDING";
 
         case "calculated":
-          return matchesSearch && proposal.transSTATUS === "CALCULATED"
+          return matchesSearch && proposal.transSTATUS === "CALCULATED";
 
         case "converted":
-          return matchesSearch && proposal.transSTATUS === "CONVERTED"
+          return matchesSearch && proposal.transSTATUS === "CONVERTED";
 
         default:
-          return matchesSearch
+          return matchesSearch;
       }
     }
-  })
+  });
+
+  const getDisplayedProposals = () =>
+    (filteredQuotations?.items || filteredProposals) as any[];
+
+  const handleApproveSelected = () => {
+    if (!selectedProposals.length) {
+      return;
+    }
+
+    console.log("Approving proposals", selectedProposals);
+  };
+
+  const toggleSelectProposal = (proposalNo: string, shouldSelect: boolean) => {
+    setSelectedProposals((prev) => {
+      if (shouldSelect) {
+        return prev.includes(proposalNo) ? prev : [...prev, proposalNo];
+      }
+
+      return prev.filter((existing) => existing !== proposalNo);
+    });
+  };
+
+  const toggleSelectAll = (shouldSelect: boolean) => {
+    const displayed = getDisplayedProposals();
+
+    if (shouldSelect) {
+      setSelectedProposals(displayed.map((proposal) => proposal.proposalNo));
+      return;
+    }
+
+    setSelectedProposals([]);
+  };
 
   const applyFilters = () => {
-    const tabFilteredQuotations = filteredProposals
+    const tabFilteredQuotations = filteredProposals;
     if (!tabFilteredQuotations || tabFilteredQuotations.length === 0) {
       setFilteredQuotations({
         items: [],
         totalCount: 0,
-      })
-      return
+      });
+      return;
     }
 
-    let filtered = [...tabFilteredQuotations]
+    let filtered = [...tabFilteredQuotations];
 
     if (filterCriteria.searchValue.trim()) {
       filtered = filtered.filter((quote) => {
-        const searchValue = filterCriteria.searchValue.toLowerCase()
+        const searchValue = filterCriteria.searchValue.toLowerCase();
         switch (filterCriteria.searchField) {
           case "fullName":
-            const fullName = `${quote.insSurname || ""} ${quote.insFirstname || ""}`.toLowerCase()
-            return fullName.includes(searchValue)
+            const fullName = `${quote.insSurname || ""} ${
+              quote.insFirstname || ""
+            }`.toLowerCase();
+            return fullName.includes(searchValue);
           case "quoteNo":
-            return quote.insOthernames?.toLowerCase().includes(searchValue)
+            return quote.insOthernames?.toLowerCase().includes(searchValue);
           case "proposalNo":
-            return quote.proposalNo?.toLowerCase().includes(searchValue)
+            return quote.proposalNo?.toLowerCase().includes(searchValue);
           case "coverCode":
-            return quote.insMobilePhone?.toLowerCase().includes(searchValue)
+            return quote.insMobilePhone?.toLowerCase().includes(searchValue);
           default:
-            return true
+            return true;
         }
-      })
+      });
     }
 
     if (filterCriteria.startDate) {
       filtered = filtered.filter((quote) => {
-        const quoteDate = new Date(quote.startDate)
-        const startDate = new Date(filterCriteria.startDate)
-        return quoteDate >= startDate
-      })
+        const quoteDate = new Date(quote.startDate);
+        const startDate = new Date(filterCriteria.startDate);
+        return quoteDate >= startDate;
+      });
     }
 
     if (filterCriteria.endDate) {
       filtered = filtered.filter((quote) => {
-        const quoteDate = new Date(quote.startDate)
-        const endDate = new Date(filterCriteria.endDate)
-        return quoteDate <= endDate
-      })
+        const quoteDate = new Date(quote.startDate);
+        const endDate = new Date(filterCriteria.endDate);
+        return quoteDate <= endDate;
+      });
     }
 
     if (filterCriteria.status !== "all") {
-      filtered = filtered.filter((quote) => quote.transSTATUS?.toLowerCase() === filterCriteria.status.toLowerCase())
+      filtered = filtered.filter(
+        (quote) =>
+          quote.transSTATUS?.toLowerCase() ===
+          filterCriteria.status.toLowerCase()
+      );
     }
 
     if (filterCriteria.coverCode.trim()) {
       filtered = filtered.filter((quote) =>
-        quote.companyID?.toLowerCase().includes(filterCriteria.coverCode.toLowerCase()),
-      )
+        quote.companyID
+          ?.toLowerCase()
+          .includes(filterCriteria.coverCode.toLowerCase())
+      );
     }
 
     setFilteredQuotations({
       items: filtered,
       totalCount: filtered.length,
-    })
-  }
+    });
+  };
 
   useEffect(() => {
-    setFilteredQuotations(null)
-  }, [activeTab, searchTerm, selectedRiskFilter, proposals])
+    setFilteredQuotations(null);
+  }, [activeTab, searchTerm, selectedRiskFilter, proposals]);
+
+  useEffect(() => {
+    setSelectedProposals([]);
+  }, [activeTab, searchTerm, selectedRiskFilter, filteredQuotations]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+    return new Date(dateString).toLocaleDateString();
+  };
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -268,27 +340,43 @@ const Quotations = ({ businessId }: QuotationsProps) => {
       CALCULATED: "qtns-status-calculated",
 
       CONVERTED: "qtns-status-converted",
-    }
+    };
 
     return (
-      <span className={`qtns-status-badge ${statusClasses[status as keyof typeof statusClasses] || ""}`}>{status}</span>
-    )
-  }
+      <span
+        className={`qtns-status-badge ${
+          statusClasses[status as keyof typeof statusClasses] || ""
+        }`}
+      >
+        {status}
+      </span>
+    );
+  };
 
   if (loading.fetchProposals) {
-    return <div className="qtns-loading">Loading quotations...</div>
+    return <div className="qtns-loading">Loading quotations...</div>;
   }
 
   if (error.fetchProposals) {
-    return <div className="qtns-error">Error: {error.fetchProposals}</div>
+    return <div className="qtns-error">Error: {error.fetchProposals}</div>;
   }
+
+  const displayedProposals = getDisplayedProposals();
+  const allDisplayedSelected =
+    displayedProposals.length > 0 &&
+    displayedProposals.every((proposal) =>
+      selectedProposals.includes(proposal.proposalNo)
+    );
 
   return (
     <div className="p-4">
       <div className="w-full flex justify-between mb-4">
         <h1 className="text-lg">Quotations Management</h1>
 
-        <Button onClick={handleCreateProposal} className="qtns-create-proposal-btn">
+        <Button
+          onClick={handleCreateProposal}
+          className="qtns-create-proposal-btn"
+        >
           Create New Quotation
         </Button>
       </div>
@@ -310,7 +398,9 @@ const Quotations = ({ businessId }: QuotationsProps) => {
               <div className="px-4 pb-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className="lg:col-span-1">
-                    <label className="text-sm text-gray-600 mb-1 block">Search by</label>
+                    <label className="text-sm text-gray-600 mb-1 block">
+                      Search by
+                    </label>
                     <Select
                       value={filterCriteria.searchField}
                       onValueChange={(value) =>
@@ -325,13 +415,17 @@ const Quotations = ({ businessId }: QuotationsProps) => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="fullName">Client Name</SelectItem>
-                        <SelectItem value="proposalNo">Proposal Number</SelectItem>
+                        <SelectItem value="proposalNo">
+                          Proposal Number
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="lg:col-span-1">
-                    <label className="text-sm text-gray-600 mb-1 block">Search text</label>
+                    <label className="text-sm text-gray-600 mb-1 block">
+                      Search text
+                    </label>
                     <NewInput
                       value={filterCriteria.searchValue}
                       onChange={(e) =>
@@ -346,7 +440,9 @@ const Quotations = ({ businessId }: QuotationsProps) => {
 
                   {/* <CHANGE> Added Status filter dropdown */}
                   <div className="lg:col-span-1">
-                    <label className="text-sm text-gray-600 mb-1 block">Status</label>
+                    <label className="text-sm text-gray-600 mb-1 block">
+                      Status
+                    </label>
                     <Select
                       value={filterCriteria.status}
                       onValueChange={(value) =>
@@ -360,16 +456,61 @@ const Quotations = ({ businessId }: QuotationsProps) => {
                         <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All ({proposals.filter((p) => (selectedRiskFilter != null ? selectedRiskFilter == p.riskID : p)).length})</SelectItem>
-                        <SelectItem value="PENDING">Drafts ({proposals.filter((p) => selectedRiskFilter != null ? p.transSTATUS === "PENDING" && selectedRiskFilter == p.riskID : p.transSTATUS === "PENDING").length})</SelectItem>
-                        <SelectItem value="CALCULATED">Calculated ({proposals.filter((p) => selectedRiskFilter != null ? p.transSTATUS === "CALCULATED" && selectedRiskFilter == p.riskID : p.transSTATUS === "CALCULATED").length})</SelectItem>
-                        <SelectItem value="CONVERTED">Converted ({proposals.filter((p) => selectedRiskFilter != null ? p.transSTATUS === "CONVERTED" && selectedRiskFilter == p.riskID : p.transSTATUS === "CONVERTED").length})</SelectItem>
+                        <SelectItem value="all">
+                          All (
+                          {
+                            proposals.filter((p) =>
+                              selectedRiskFilter != null
+                                ? selectedRiskFilter == p.riskID
+                                : p
+                            ).length
+                          }
+                          )
+                        </SelectItem>
+                        <SelectItem value="PENDING">
+                          Drafts (
+                          {
+                            proposals.filter((p) =>
+                              selectedRiskFilter != null
+                                ? p.transSTATUS === "PENDING" &&
+                                  selectedRiskFilter == p.riskID
+                                : p.transSTATUS === "PENDING"
+                            ).length
+                          }
+                          )
+                        </SelectItem>
+                        <SelectItem value="CALCULATED">
+                          Calculated (
+                          {
+                            proposals.filter((p) =>
+                              selectedRiskFilter != null
+                                ? p.transSTATUS === "CALCULATED" &&
+                                  selectedRiskFilter == p.riskID
+                                : p.transSTATUS === "CALCULATED"
+                            ).length
+                          }
+                          )
+                        </SelectItem>
+                        <SelectItem value="CONVERTED">
+                          Converted (
+                          {
+                            proposals.filter((p) =>
+                              selectedRiskFilter != null
+                                ? p.transSTATUS === "CONVERTED" &&
+                                  selectedRiskFilter == p.riskID
+                                : p.transSTATUS === "CONVERTED"
+                            ).length
+                          }
+                          )
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="lg:col-span-1">
-                    <label className="text-sm text-gray-600 mb-1 block">Start Date</label>
+                    <label className="text-sm text-gray-600 mb-1 block">
+                      Start Date
+                    </label>
                     <NewInput
                       type="date"
                       value={filterCriteria.startDate}
@@ -383,7 +524,9 @@ const Quotations = ({ businessId }: QuotationsProps) => {
                   </div>
 
                   <div className="lg:col-span-1">
-                    <label className="text-sm text-gray-600 mb-1 block">End Date</label>
+                    <label className="text-sm text-gray-600 mb-1 block">
+                      End Date
+                    </label>
                     <NewInput
                       type="date"
                       value={filterCriteria.endDate}
@@ -399,13 +542,20 @@ const Quotations = ({ businessId }: QuotationsProps) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div className="flex items-end">
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={applyFilters}>
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={applyFilters}
+                    >
                       <Search className="w-4 h-4 mr-2" />
                       Apply
                     </Button>
                   </div>
                   <div className="flex items-end">
-                    <Button variant="outline" className="w-full bg-transparent" onClick={clearFilters}>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-transparent"
+                      onClick={clearFilters}
+                    >
                       Clear Filters
                     </Button>
                   </div>
@@ -419,55 +569,132 @@ const Quotations = ({ businessId }: QuotationsProps) => {
 
         {/* <CHANGE> Replace card list with table */}
         <div className="qtns-table-container">
-          {(filteredQuotations?.items || filteredProposals).length === 0 ? (
+          {selectedProposals.length > 0 && (
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-600">
+                {selectedProposals.length} selected
+              </span>
+              <Button size="sm" onClick={handleApproveSelected}>
+                Approve
+              </Button>
+            </div>
+          )}
+
+          {displayedProposals.length === 0 ? (
             <div className="qtns-no-proposals">
               <p>No proposals found.</p>
-              <Button onClick={handleCreateProposal}>Create Your First Proposal</Button>
+              <Button onClick={handleCreateProposal}>
+                Create Your First Proposal
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse bg-white shadow-sm rounded-lg">
                 <thead>
                   <tr className="bg-gray-100 border-b">
-                    <th className="text-left p-4 font-semibold text-sm">Proposal No.</th>
-                    <th className="text-left p-4 font-semibold text-sm">Client Name</th>
-                    <th className="text-left p-4 font-semibold text-sm">Status</th>
-                    <th className="text-left p-4 font-semibold text-sm">Business</th>
-                    <th className="text-left p-4 font-semibold text-sm">Subclass</th>
-                    <th className="text-left p-4 font-semibold text-sm">Start Date</th>
-                    <th className="text-left p-4 font-semibold text-sm">End Date</th>
-                    <th className="text-right p-4 font-semibold text-sm">Premium</th>
-                    <th className="text-center p-4 font-semibold text-sm">Actions</th>
+                    <th className="p-4 w-12">
+                      <Checkbox
+                        checked={allDisplayedSelected}
+                        onCheckedChange={(value) =>
+                          toggleSelectAll(value === true)
+                        }
+                        aria-label="Select all proposals"
+                      />
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      Proposal No.
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      Client Name
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      Status
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      Business
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      Subclass
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      Start Date
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm">
+                      End Date
+                    </th>
+                    <th className="text-right p-4 font-semibold text-sm">
+                      Premium
+                    </th>
+                    <th className="text-center p-4 font-semibold text-sm">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(filteredQuotations?.items || filteredProposals).map((proposal: any) => (
-                    <tr key={proposal.proposalNo} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="p-4 text-sm font-medium">{proposal.proposalNo}</td>
-                      <td className="p-4 text-sm">{proposal.insSurname} {proposal.insFirstname}</td>
-                      <td className="p-4 text-sm">{getStatusBadge(proposal.transSTATUS)}</td>
-                      <td className="p-4 text-sm">{risks.find((r) => r.riskID == proposal.riskID)?.riskName}</td>
+                  {displayedProposals.map((proposal: any) => (
+                    <tr
+                      key={proposal.proposalNo}
+                      className="border-b hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="p-4">
+                        <Checkbox
+                          checked={selectedProposals.includes(
+                            proposal.proposalNo
+                          )}
+                          onCheckedChange={(value) =>
+                            toggleSelectProposal(
+                              proposal.proposalNo,
+                              value === true
+                            )
+                          }
+                          aria-label={`Select proposal ${proposal.proposalNo}`}
+                        />
+                      </td>
+                      <td className="p-4 text-sm font-medium">
+                        {proposal.proposalNo}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {proposal.insSurname} {proposal.insFirstname}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {getStatusBadge(proposal.transSTATUS)}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {
+                          risks.find((r) => r.riskID == proposal.riskID)
+                            ?.riskName
+                        }
+                      </td>
                       <td className="p-4 text-sm">{proposal.subRisk}</td>
-                      <td className="p-4 text-sm">{formatDate(proposal.startDate)}</td>
-                      <td className="p-4 text-sm">{formatDate(proposal.endDate)}</td>
+                      <td className="p-4 text-sm">
+                        {formatDate(proposal.startDate)}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {formatDate(proposal.endDate)}
+                      </td>
                       <td className="p-4 text-sm text-right font-medium">
                         {proposal.grossPremium
                           ? new Intl.NumberFormat("en-NG", {
-                            style: "currency",
-                            currency: "NGN",
-                          }).format(proposal.grossPremium)
+                              style: "currency",
+                              currency: "NGN",
+                            }).format(proposal.grossPremium)
                           : "N/A"}
                       </td>
                       <td className="p-4 text-sm">
                         <div className="flex gap-2 justify-center">
-                        <Button variant="default" size="sm">
-                            Approve
-                          </Button>
-                          <Button onClick={() => handleEditProposal(proposal.proposalNo)} variant="outline" size="sm">
+                          <Button
+                            onClick={() =>
+                              handleEditProposal(proposal.proposalNo)
+                            }
+                            variant="outline"
+                            size="sm"
+                          >
                             View/Edit
                           </Button>
                           <Button
-                            onClick={() => handleDeleteProposal(proposal.proposalNo)}
+                            onClick={() =>
+                              handleDeleteProposal(proposal.proposalNo)
+                            }
                             variant="outline"
                             size="sm"
                             className="qtns-delete-btn"
@@ -753,7 +980,11 @@ const Quotations = ({ businessId }: QuotationsProps) => {
 
       <div className="qtns-pagination">
         {/* @ts-ignore */}
-        <Button onClick={() => handlePageChange(pagination.page - 1)} disabled={!pagination.hasPrevious} size="sm">
+        <Button
+          onClick={() => handlePageChange(pagination.page - 1)}
+          disabled={!pagination.hasPrevious}
+          size="sm"
+        >
           Previous
         </Button>
 
@@ -762,18 +993,23 @@ const Quotations = ({ businessId }: QuotationsProps) => {
             <>Showing {filteredQuotations.totalCount} filtered results</>
           ) : (
             <>
-              Page {pagination.page} of {pagination.totalPages} ({pagination.totalCount} total)
+              Page {pagination.page} of {pagination.totalPages} (
+              {pagination.totalCount} total)
             </>
           )}
         </span>
 
         {/* @ts-ignore */}
-        <Button onClick={() => handlePageChange(pagination.page + 1)} disabled={!pagination.hasNext} size="sm">
+        <Button
+          onClick={() => handlePageChange(pagination.page + 1)}
+          disabled={!pagination.hasNext}
+          size="sm"
+        >
           Next
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Quotations
+export default Quotations;
