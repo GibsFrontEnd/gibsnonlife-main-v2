@@ -4,6 +4,7 @@ const CSUSidebar = () => {
   const location = useLocation();
   const menuItems = [
     { path: "enquiries", label: "Enquiries", icon: "🔒" },
+    { path: "renewal-model", label: "Renewal Model", icon: "🔄" },
     { path: "customers", label: "Customers", icon: "📦" },
     { path: "partners", label: "Partners", icon: "⚡" },
     { path: "messaging", label: "Messaging", icon: "⚙️" },

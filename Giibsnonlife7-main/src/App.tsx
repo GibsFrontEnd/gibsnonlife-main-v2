@@ -17,6 +17,7 @@ import AdminSettings from "./pages/admin/admin-page.Settings";
 import Dashboard from "./pages/Dashboard";
 import CSU from "./pages/CSU";
 import CSUEnquiries from "./pages/csu/csu-page.enquiries";
+import CSURenewalModel from "./pages/csu/csu-page.renewal-model";
 import CSUCustomers from "./pages/csu/csu-page.customers";
 import CSUMessaging from "./pages/csu/csu-page.messaging";
 import CSUTickets from "./pages/csu/csu-page.tickets";
@@ -29,7 +30,6 @@ import ClauseManager from "./components/quotations/quotes/ClauseManager";
 import CreateProposal from "./components/quotations/quotes/CreateProposal";
 import QuoteCreator from "./components/quotations/quotes/QuoteCreator";
 import MotorQuoteCreator from "./components/quotations/quotes/MotorQuoteCreator";
-
 
 const App: React.FC = () => {
   useAuth();
@@ -47,6 +47,7 @@ const App: React.FC = () => {
 
           <Route path="/csu" element={<CSU />}>
             <Route path="enquiries" element={<CSUEnquiries />} />
+            <Route path="renewal-model" element={<CSURenewalModel />} />
             <Route path="customers" element={<CSUCustomers />} />
             <Route path="partners" element={<CSUParty />} />
             <Route path="messaging" element={<CSUMessaging />} />
@@ -60,13 +61,15 @@ const App: React.FC = () => {
             <Route path="create/:businessId" element={<CreateProposal />} />
             <Route path="edit/:proposalNo" element={<EditProposal />} />
             <Route path="quote/:proposalNo" element={<QuoteCreator />} />
-            <Route path="quote/motor/:proposalNo" element={<MotorQuoteCreator />} />
+            <Route
+              path="quote/motor/:proposalNo"
+              element={<MotorQuoteCreator />}
+            />
             <Route path="customers" element={<CSUCustomers />} />
             <Route path="partners" element={<CSUParty />} />
             <Route path="messaging" element={<CSUMessaging />} />
             <Route path="tickets" element={<CSUTickets />} />
           </Route>
-
 
           <Route path="/admin" element={<Admin />}>
             <Route index element={<AdminDashboard />} />
