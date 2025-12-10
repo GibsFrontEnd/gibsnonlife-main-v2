@@ -5,6 +5,7 @@ import { getAllRisks } from "@/features/reducers/adminReducers/riskSlice";
 import type { AppDispatch, RootState } from "@/features/store";
 import { Button } from "@/components/UI/new-button";
 import { Label } from "@/components/UI/label";
+import axios from "axios"; // or your preferred HTTP client
 
 const ProcessRenewalListing = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -13,6 +14,8 @@ const ProcessRenewalListing = () => {
   const [period1, setPeriod1] = useState("");
   const [period2, setPeriod2] = useState("");
   const [classOfBusiness, setClassOfBusiness] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     dispatch(getAllRisks({ pageNumber: 1, pageSize: 100 }) as any);
@@ -28,9 +31,66 @@ const ProcessRenewalListing = () => {
     setPeriod2(nextYear.toISOString().split("T")[0]);
   }, []);
 
-  const handleClickHereToStart = () => {
-    // Process the renewal listing
-    console.log({ period1, period2, classOfBusiness });
+  const handleClickHereToStart = async () => {
+    // Validate inputs
+    if (!period1 || !period2) {
+      setMessage({ type: "error", text: "Please select both periods" });
+      return;
+    }
+
+    if (!classOfBusiness) {
+      setMessage({ type: "error", text: "Please select a class of business" });
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      // Generate a unique batch GUID
+      const batchGuid = crypto.randomUUID();
+      
+      // Get current user (you might need to adjust this based on your auth system)
+      const submittedBy = "currentUser"; // Replace with actual user from your auth context
+      
+      // Convert dates to ISO string format for the API
+      const period1ISO = new Date(period1).toISOString();
+      const period2ISO = new Date(period2).toISOString();
+
+      // Make the API call
+      const response = await axios.get("/api/Reports/Renewal-Policy-Process/RunBatchRenewalPoliciesProcess", {
+        params: {
+          period1: period1ISO,
+          period2: period2ISO,
+          batchGuid: batchGuid,
+          submittedBy: submittedBy
+        }
+      });
+
+      // Handle success
+      if (response.status === 200) {
+        setMessage({ 
+          type: "success", 
+          text: `Process started successfully! Batch GUID: ${batchGuid}` 
+        });
+        console.log("Process response:", response.data);
+        
+        // Optionally reset the form or show additional info
+      } else {
+        setMessage({ 
+          type: "error", 
+          text: `Process failed with status: ${response.status}` 
+        });
+      }
+    } catch (error) {
+      console.error("Error starting renewal process:", error);
+      setMessage({ 
+        type: "error", 
+        text: "Failed to start process. Please try again." 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,6 +135,18 @@ const ProcessRenewalListing = () => {
             {/* Form Section */}
             <div className="flex-1">
               <div className="bg-gray-50/80 border border-gray-200 rounded-xl p-6 shadow-sm space-y-6">
+                {/* Message Display */}
+                {message && (
+                  <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                        {message.type === 'success' ? '✓' : '✗'}
+                      </span>
+                      <span>{message.text}</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-gray-600">
@@ -108,6 +180,7 @@ const ProcessRenewalListing = () => {
                       value={classOfBusiness}
                       onChange={(e) => setClassOfBusiness(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 hover:border-gray-300 bg-white shadow-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e')] bg-[length:1.5rem] bg-[right_0.75rem_center] bg-no-repeat"
+                      disabled={loading}
                     >
                       <option value="">- select -</option>
                       {risks &&
@@ -123,10 +196,20 @@ const ProcessRenewalListing = () => {
                 <div className="flex justify-start">
                   <Button
                     onClick={handleClickHereToStart}
-                    className="px-8 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                    disabled={loading}
+                    className="px-8 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>▶</span>
-                    <span>Click Here To Start</span>
+                    {loading ? (
+                      <>
+                        <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>▶</span>
+                        <span>Click Here To Start</span>
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

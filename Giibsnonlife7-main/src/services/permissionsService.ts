@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://core-api.newgibsonline.com/api"
+const API_BASE_URL = "https://nsianlapi.newgibsonline.com/api"
 
 export interface Permission {
   permissionID: number

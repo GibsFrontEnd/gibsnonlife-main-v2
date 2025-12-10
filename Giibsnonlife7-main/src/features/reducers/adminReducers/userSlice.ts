@@ -11,7 +11,7 @@ import type {
 import { decryptData } from "../../../utils/encrypt-utils";
 import type { RootState } from "../../store"
 
-const API_BASE_URL = "https://core-api.newgibsonline.com/api"
+const API_BASE_URL = "https://nsianlapi.newgibsonline.com/api"
 
 // You'll need to get this token from your auth system
 const getAuthToken = () => {

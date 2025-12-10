@@ -35,7 +35,12 @@ const CSUEnquiries = () => {
           ))}
         </TabsList>
         {tabs.map((tab) => (
-          <TabsContent value={tab.title}>{tab.content}</TabsContent>
+          <TabsContent 
+            key={tab.title}
+            value={tab.title}
+          >
+            {tab.content}
+          </TabsContent>
         ))}
       </Tabs>
     </div>

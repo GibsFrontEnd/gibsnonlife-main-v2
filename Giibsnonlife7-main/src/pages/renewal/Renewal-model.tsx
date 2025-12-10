@@ -1,6 +1,6 @@
 import { useState } from "react";
-import ProcessRenewalListing from "@/components/csu/renewal-model/renewal-model.process-listing";
-import RenewalNoticeAdjustments from "@/components/csu/renewal-model/renewal-model.notice-adjustments";
+import ProcessRenewalListing from "@/components/renewal-model/renewal-model.process-listing";
+import RenewalNoticeAdjustments from "@/components/renewal-model/renewal-model.notice-adjustments";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/UI/tabs";
 
 const tabs = [

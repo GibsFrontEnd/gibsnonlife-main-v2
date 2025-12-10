@@ -1,17 +1,17 @@
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
-const CSUSidebar = () => {
+const CSUSidebar: React.FC = () => {
   const location = useLocation();
+  
   const menuItems = [
     { path: "enquiries", label: "Enquiries", icon: "🔒" },
-    { path: "renewal-model", label: "Renewal Model", icon: "🔄" },
     { path: "customers", label: "Customers", icon: "📦" },
     { path: "partners", label: "Partners", icon: "⚡" },
     { path: "messaging", label: "Messaging", icon: "⚙️" },
     { path: "tickets", label: "Tickets", icon: "🎫" },
   ];
 
-  // helper to check active even for nested routes (e.g. /enquiries/123)
   const isActive = (itemPath: string) =>
     location.pathname === `/${itemPath}` ||
     location.pathname.startsWith(`/${itemPath}/`);
@@ -19,32 +19,82 @@ const CSUSidebar = () => {
   return (
     <aside
       className="
-        fixed left-0 top-0 bottom-0 z-100
+        fixed left-0 top-0 bottom-0 z-40
         bg-gradient-to-b from-slate-800 to-blue-900 text-white
         flex flex-col
         overflow-y-auto
-        md:w-52 max-md:w-15
+        md:w-64 sm:w-20 w-16
+        mt-14 md:mt-14 sm:mt-14
+        transition-all duration-300
       "
+      aria-label="CSU sidebar"
     >
-      <div className="font-bold text-lg pt-5 pl-3 pb-8">GIBS ENTERPRISE 7</div>
-      <nav className="flex-1 py-2.5">
+      {/* Sidebar Header - Hide on small screens */}
+      <div className="p-5 border-b border-gray-700/50 md:block sm:hidden hidden">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <span className="text-lg">⚡</span>
+          </div>
+          <div>
+            <h1 className="font-bold text-lg text-white">CSU System</h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Header */}
+      <div className="p-4 border-b border-gray-700/50 md:hidden sm:block block">
+        <div className="flex justify-center">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <span className="text-lg">⚡</span>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 py-4">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
-            className={`flex items-center py-3 px-5 text-white/80 no-underline transition-all duration-200 border-l-4 border-transparent hover:bg-white/10 hover:text-white max-md:justify-center max-md:py-4 max-md:px-2.5 ${
-              isActive(item.path)
+            className={`
+              flex items-center 
+              py-3 px-5 
+              text-white/80 no-underline 
+              transition-all duration-200 
+              border-l-4 border-transparent 
+              hover:bg-white/10 hover:text-white
+              md:justify-start sm:justify-center justify-center
+              md:px-5 sm:px-2 px-1
+              ${isActive(item.path)
                 ? "bg-white/15 text-white border-l-orange-500"
                 : ""
-            }`}
+              }
+            `}
+            title={item.label} // Tooltip for mobile
           >
-            <span className="mr-3 text-base max-md:mr-0">{item.icon}</span>
-            <span className="text-sm font-medium max-md:hidden">
-              {item.label}
-            </span>
+            <span className="md:text-xl sm:text-lg text-base">{item.icon}</span>
+            <div className="flex-1 md:block sm:hidden hidden">
+              <div className="text-sm font-medium ml-3">{item.label}</div>
+            </div>
           </Link>
         ))}
       </nav>
+
+      {/* Sidebar Footer - Hide on small screens */}
+      <div className="p-4 border-t border-gray-700/50 md:block sm:hidden hidden">
+        <div className="text-xs text-gray-400 text-center">
+          GIBS Enterprise v7
+          <div className="text-[10px] text-gray-500 mt-1">
+            Customer Support Unit
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Footer */}
+      <div className="p-2 border-t border-gray-700/50 md:hidden sm:block block">
+        <div className="text-[8px] text-gray-400 text-center rotate-90 whitespace-nowrap mt-4">
+          CSU
+        </div>
+      </div>
     </aside>
   );
 };

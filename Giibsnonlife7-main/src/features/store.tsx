@@ -20,6 +20,7 @@ import companySlice from "./reducers/companyReducers/companySlice";
 import marketingChannelsReducer from "./reducers/companyReducers/marketingChannelSlice";
 import clauseReducer from "./reducers/quoteReducers/clauseSlice";
 import motorQuotationReducer from "./reducers/quoteReducers/motorQuotationSlice";
+import renewalReducer from "./reducers/renewalReducers/renewalSlice"
 
 export const store = configureStore({
   reducer: {
@@ -44,6 +45,7 @@ export const store = configureStore({
     marketingChannels: marketingChannelsReducer,
     clauses: clauseReducer,
     motorQuotations: motorQuotationReducer,
+    renewal: renewalReducer,
   },
 });
 

@@ -10,6 +10,7 @@ const Header: React.FC = () => {
     { title: "Home", link: "/dashboard" },
     { title: "CSU", link: "/csu" },
     { title: "Quotation", link: "/quotations" },
+    { title: "Renewal", link: "/renewal" },
     { title: "Underwriting", link: "/underwriting" },
     { title: "Claims", link: "/claims" },
     { title: "Reinsurance", link: "/re-insurance" },

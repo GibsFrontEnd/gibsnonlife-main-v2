@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/UI/new-select";
-import "../../quotations/quotes/Quotations.css";
+
 
 type RenewalRecord = {
   policyNo: string;

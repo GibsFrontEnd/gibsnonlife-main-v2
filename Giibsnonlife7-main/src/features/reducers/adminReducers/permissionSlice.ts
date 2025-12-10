@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/tool
 import type { Permission, CreatePermissionRequest, PermissionState } from "../../../types/permission"
 import type { RootState } from "../../store"
 
-const API_BASE_URL = "https://core-api.newgibsonline.com/api"
+const API_BASE_URL = "https://nsianlapi.newgibsonline.com/api"
 
 // Async thunks
 export const getAllPermissions = createAsyncThunk("permissions/getAllPermissions", async (_, { rejectWithValue }) => {

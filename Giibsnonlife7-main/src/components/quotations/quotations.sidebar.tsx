@@ -37,22 +37,34 @@ const QuoteSidebar: React.FC = () => {
   return (
     <aside
       className="
-      fixed left-0 top-0 bottom-0 z-100
-      bg-blue-900 text-white
+      fixed left-0 top-0 bottom-0 z-40
+      bg-gradient-to-b from-slate-800 to-blue-900 text-white
       flex flex-col
       overflow-y-auto
-      md:w-52 max-md:w-15
+      w-64
+      mt-14
     "
       aria-label="Main sidebar"
     >
-      <div className="font-bold text-lg pt-5 pl-3 pb-4">GIBS ENTERPRISE 7</div>
+      {/* Sidebar Header - Updated styling */}
+      <div className="p-5 border-b border-gray-700/50">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <span className="text-lg">💼</span>
+          </div>
+          <div>
+            <h1 className="font-bold text-lg text-white">Quotation System</h1>
+            <p className="text-xs text-gray-300 mt-1">Policy Quotation Management</p>
+          </div>
+        </div>
+      </div>
 
-      <nav className="flex-1 py-2.5">
+      <nav className="flex-1 py-4">
         {/* Quotations section (collapsible) */}
         <div>
           <button
             onClick={() => setQuotesOpen((v) => !v)}
-            className={`w-full flex items-center justify-between py-3 px-5 text-white/90 no-underline transition-all duration-200 border-l-4 border-transparent hover:bg-white/10 hover:text-white max-md:justify-center max-md:py-4 max-md:px-2.5 ${
+            className={`w-full flex items-center justify-between py-3 px-5 text-white/80 no-underline transition-all duration-200 border-l-4 border-transparent hover:bg-white/10 hover:text-white ${
               location.pathname.startsWith("/quotes")
                 ? "bg-white/15 text-white border-l-orange-500"
                 : ""
@@ -61,24 +73,24 @@ const QuoteSidebar: React.FC = () => {
             aria-controls="quotes-submenu"
           >
             <div className="flex items-center">
-              <span className="mr-3 text-base max-md:mr-0">🔒</span>
-              <span className="text-sm font-medium max-md:hidden">
+              <span className="mr-3 text-xl">🔒</span>
+              <span className="text-sm font-medium">
                 Quotations
               </span>
             </div>
-            <span className="text-sm max-md:hidden">
-              {quotesOpen ? "▾" : "▸"}
+            <span className="text-sm">
+              {quotesOpen ? "▼" : "▶"}
             </span>
           </button>
 
           <div
             id="quotes-submenu"
-            className={`pl-6 transition-all max-md:hidden ${
+            className={`pl-6 transition-all ${
               quotesOpen ? "block" : "hidden"
             }`}
           >
             {!risks && (
-              <div className="py-2 px-2 text-xs text-white/70">
+              <div className="py-2 px-2 text-xs text-gray-400 italic">
                 Loading risks…
               </div>
             )}
@@ -88,25 +100,35 @@ const QuoteSidebar: React.FC = () => {
                 <Link
                   key={item.id}
                   to={item.path}
-                  className={`flex items-center py-2 px-3 text-white/80 no-underline transition-all duration-150 rounded-md hover:bg-white/6 hover:text-white ${
+                  className={`flex items-center py-2 px-3 text-white/70 no-underline transition-all duration-150 rounded-md hover:bg-white/10 hover:text-white ${
                     isActive(item.path)
-                      ? "bg-white/12 text-white font-semibold"
+                      ? "bg-white/15 text-white font-medium"
                       : ""
                   }`}
                 >
                   <span className="mr-3 text-sm">{item.icon}</span>
-                  <span className="text-sm max-md:hidden">{item.label}</span>
+                  <span className="text-sm">{item.label}</span>
                 </Link>
               ))}
 
             {risks && quotationItems.length === 1 && (
-              <div className="py-2 px-3 text-xs text-white/70">
+              <div className="py-2 px-3 text-xs text-gray-400 italic">
                 No risk categories found.
               </div>
             )}
           </div>
         </div>
       </nav>
+
+      {/* Sidebar Footer - Added */}
+      <div className="p-4 border-t border-gray-700/50">
+        <div className="text-xs text-gray-400 text-center">
+          GIBS Enterprise v7
+          <div className="text-[10px] text-gray-500 mt-1">
+            Quotation Management
+          </div>
+        </div>
+      </div>
     </aside>
   );
 };

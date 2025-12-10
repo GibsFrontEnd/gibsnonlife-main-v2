@@ -7,7 +7,7 @@ import type {
 } from "../../../types/motor-quotation"
 import { parseCalculatedVehiclesToUI } from "@/utils/quotationCalculations";
 
-const API_BASE = "https://core-api.newgibsonline.com/api"
+const API_BASE = "https://nsianlapi.newgibsonline.com/api"
 
 // Async thunks for motor calculations
 export const calculateMotorComplete = createAsyncThunk(

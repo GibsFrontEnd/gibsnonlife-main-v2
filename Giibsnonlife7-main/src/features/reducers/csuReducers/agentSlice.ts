@@ -5,7 +5,7 @@ import type { Agent, AgentState, CreateAgentRequest, AgentPaginationResponse } f
 import { decryptData } from "../../../utils/encrypt-utils";
 
 
-const API_BASE_URL = "https://core-api.newgibsonline.com/api";
+const API_BASE_URL = "https://nsianlapi.newgibsonline.com/api";
 
 // You'll need to get this token from your auth system
 const getAuthToken = () => {

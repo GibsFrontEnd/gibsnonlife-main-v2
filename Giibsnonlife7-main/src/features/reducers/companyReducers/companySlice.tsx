@@ -4,7 +4,7 @@ import type { RootState } from "../../store";
 import { decryptData } from "../../../utils/encrypt-utils";
 
 const encryptedToken = localStorage.getItem("token");
-const API_BASE_URL = "https://core-api.newgibsonline.com/api";
+const API_BASE_URL = "https://nsianlapi.newgibsonline.com/api";
 const AUTH_TOKEN = decryptData(encryptedToken);
 
 // Types

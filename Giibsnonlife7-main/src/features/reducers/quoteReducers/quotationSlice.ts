@@ -22,7 +22,7 @@ import type {
 import { decryptData } from "../../../utils/encrypt-utils"
 import apiCall from "@/utils/api-call";
 
-const API_BASE_URL = "https://core-api.newgibsonline.com/api"
+const API_BASE_URL = "https://nsianlapi.newgibsonline.com/api"
 const getAuthToken = () => {
   try {
     const encryptedToken = localStorage.getItem("token");
