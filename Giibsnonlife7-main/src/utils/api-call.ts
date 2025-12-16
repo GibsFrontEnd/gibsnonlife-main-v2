@@ -7,19 +7,25 @@ import { decryptData } from "./encrypt-utils";
 const apiCall = axios.create({
   baseURL: SERVER_URL,
   timeout: 60000,
+  withCredentials: true,
 });
 
 apiCall.interceptors.request.use(
   (config) => {
-    // const token = decryptData(localStorage.getItem("token"));
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    console.log('🔍 [API Interceptor Debug] Starting request...');
+    console.log('Request URL:', config.url);
     const encryptedToken = localStorage.getItem("token");
+    console.log('Encrypted token from localStorage:', encryptedToken ? 'EXISTS' : 'MISSING');
+
+
     const token = encryptedToken ? decryptData(encryptedToken) : null;
+    console.log('Decrypted token result:', token ? 'SUCCESS' : 'FAILED/EMPTY');
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+            console.log('✅ Authorization header SET for:', config.url);
+    } else {
+       console.log('❌ NO Authorization header set. Token missing or decryption failed.');
     }
     return config;
   },

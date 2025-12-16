@@ -9,14 +9,75 @@ import type {
 } from "../../../types/policy"
 
 // Get All Policies
-export const getAllPolicies = createAsyncThunk("policies/getAllPolicies", async (_, { rejectWithValue }) => {
+// In your policySlice.ts file, replace getAllPolicies thunk:
+export const getAllPolicies = createAsyncThunk(
+  "policies/getAllPolicies",
+  async (params: {
+    pageNumber?: number;
+    pageSize?: number;
+    createdFrom?: string;
+    createdTo?: string;
+    expiresFrom?: string;
+    expiresTo?: string;
+    insuredName?: string;
+    policyNo?: string;
+    classID?: string;
+  } = {},
+  { rejectWithValue }
+) => {
   try {
-    const response = await apiCall.get("/policies")
-    return response.data
+    console.log('🚀 [Policy Request] Starting fetch...');
+    const queryParams = new URLSearchParams();
+    queryParams.append("pageNumber", (params.pageNumber || 1).toString());
+    queryParams.append("pageSize", (params.pageSize || 50).toString());
+    
+    // Add optional filters
+    if (params.createdFrom) queryParams.append("createdFrom", params.createdFrom);
+    if (params.createdTo) queryParams.append("createdTo", params.createdTo);
+    if (params.expiresFrom) queryParams.append("expiresFrom", params.expiresFrom);
+    if (params.expiresTo) queryParams.append("expiresTo", params.expiresTo);
+    if (params.insuredName) queryParams.append("insuredName", params.insuredName);
+    if (params.policyNo) queryParams.append("policyNo", params.policyNo);
+    if (params.classID) queryParams.append("classID", params.classID);
+    
+    const url = `/policies?${queryParams.toString()}`;
+    console.log('📡 Request URL:', url);
+    
+    const response = await apiCall.get(url);
+    console.log('✅ Request successful. Status:', response.status);
+    return response.data;
+    
   } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || error.message || "Failed to fetch policies")
+    // ===== ENHANCED ERROR LOGGING =====
+    console.error('🔴 🔴 🔴 FULL ERROR DETAILS 🔴 🔴 🔴');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    
+    if (error.response) {
+      console.error('Response Status:', error.response.status);
+      console.error('Response Status Text:', error.response.statusText);
+      console.error('Response Headers:', error.response.headers);
+      console.error('Response Data:', error.response.data);
+    }
+    
+    if (error.config) {
+      console.error('Request URL:', error.config.url);
+      console.error('Request Method:', error.config.method);
+      console.error('Request Headers:', error.config.headers);
+    }
+    // ===== END ENHANCED LOGGING =====
+    
+    return rejectWithValue(
+      error.response?.data?.message || 
+      error.response?.data || 
+      error.message || 
+      "Failed to fetch policies"
+    );
   }
-})
+});
+
+
 
 // Get Policy Details
 export const getPolicyDetails = createAsyncThunk(

@@ -36,14 +36,16 @@ const QuoteSidebar: React.FC = () => {
 
   return (
     <aside
-      className="
-      fixed left-0 top-0 bottom-0 z-40
-      bg-gradient-to-b from-slate-800 to-blue-900 text-white
-      flex flex-col
-      overflow-y-auto
-      w-64
-      mt-14
-    "
+     className="
+  fixed left-0 top-0 bottom-0 z-40
+  bg-gradient-to-b from-slate-800 to-blue-900 text-white
+  flex flex-col
+  overflow-y-auto
+  w-64
+  h-full
+  transition-all duration-300
+  mt-12
+"
       aria-label="Main sidebar"
     >
       {/* Sidebar Header - Updated styling */}

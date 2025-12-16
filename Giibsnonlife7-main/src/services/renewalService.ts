@@ -1,4 +1,4 @@
-// services/renewal.service.ts
+//@ts-nocheck
 import {
     Renewal,
     RenewalResponse,

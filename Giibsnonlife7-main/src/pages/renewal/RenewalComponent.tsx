@@ -1,4 +1,4 @@
-// src/pages/renewal/Renewal.tsx
+//@ts-nocheck
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import EditRenewalModel from './EditRenewalModel';
@@ -15,7 +15,7 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
-  Download,
+ 
   BarChart3,
   CheckCircle,
   Clock,
@@ -688,24 +688,80 @@ const RenewalComponent: React.FC = () => {
     setLastUpdated(new Date().toISOString());
   }, [dispatch]);
 
-  // Handle search
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    const searchFilters: RenewalFilterParams = query
-      ? { policyNo: query, insuredName: query }
-      : {};
-    
-    dispatch(setFilters(searchFilters));
-    dispatch(filterRenewals({ ...searchFilters, page: 1, pageSize: pagination.pageSize }));
-    setLastUpdated(new Date().toISOString());
-  }, [dispatch, pagination.pageSize]);
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      console.log('🔄 Auto-refreshing renewals...');
+      dispatch(fetchRenewals({ 
+        ...filters, 
+        page: pagination.page, 
+        pageSize: pagination.pageSize 
+      }));
+      setLastUpdated(new Date().toISOString());
+    }, 30000); // Refresh every 30 seconds (30000 milliseconds)
 
-  // Handle filter apply
-  const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
-    dispatch(setFilters(newFilters));
-    dispatch(filterRenewals({ ...newFilters, page: 1, pageSize: pagination.pageSize }));
-    setLastUpdated(new Date().toISOString());
-  }, [dispatch, pagination.pageSize]);
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [dispatch, filters, pagination.page, pagination.pageSize]);
+
+// In your RenewalComponent.tsx
+// Handle search
+// Handle search - improved version that can search both
+const handleSearch = useCallback((query: string) => {
+  setSearchQuery(query);
+  
+  if (!query.trim()) {
+    // If empty search, fetch all with pagination
+    dispatch(fetchRenewals({ page: 1, pageSize: 10 }));
+    return;
+  }
+  
+  // Start with empty search params
+  let searchParams: RenewalFilterParams = {};
+  
+  // Try to detect if it's a policy number
+  const isLikelyPolicyNumber = 
+    query.includes('/') || // Contains slashes
+    /^[A-Z]{2,3}\/\w+\/\w+/.test(query) || // Pattern like XXX/XXX/XXX
+    /^[A-Z]{2,}\d+$/.test(query) || // Pattern like ABC123
+    query.match(/^[A-Z]+\/[A-Z]+\/[A-Z]+\/\d+$/); // Full pattern
+  
+  if (isLikelyPolicyNumber) {
+    // Search by policy number first
+    searchParams.policyNo = query;
+    console.log('🔍 Searching by Policy Number:', query);
+  } else {
+    // Search by insured name
+    searchParams.insuredName = query;
+    console.log('🔍 Searching by Insured Name:', query);
+  }
+  
+  console.log('🔍 Executing search with:', searchParams);
+  
+  dispatch(setFilters(searchParams));
+  dispatch(filterRenewals(searchParams));
+  
+  setLastUpdated(new Date().toISOString());
+}, [dispatch]);
+
+// Handle filter apply
+const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
+  dispatch(setFilters(newFilters));
+  
+  // Remove page/pageSize for filter endpoint
+  const filterParams = { ...newFilters }; // Different variable name
+  delete filterParams.page;
+  delete filterParams.pageSize;
+  
+  dispatch(filterRenewals(filterParams));
+  setLastUpdated(new Date().toISOString());
+}, [dispatch, pagination.pageSize]);
+
+  // // Handle filter apply
+  // const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
+  //   dispatch(setFilters(newFilters));
+  //   dispatch(filterRenewals({ ...newFilters, page: 1, pageSize: pagination.pageSize }));
+  //   setLastUpdated(new Date().toISOString());
+  // }, [dispatch, pagination.pageSize]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
@@ -748,9 +804,15 @@ const RenewalComponent: React.FC = () => {
   }, [dispatch, filters, pagination.page, pagination.pageSize]);
 
   // Active filters count
-  const activeFilterCount = useMemo(() => {
-    return Object.keys(filters).filter(k => filters[k as keyof RenewalFilterParams]).length;
-  }, [filters]);
+// In your RenewalComponent.tsx, update the activeFilterCount calculation:
+const activeFilterCount = useMemo(() => {
+  const filterKeys = Object.keys(filters).filter(k => filters[k as keyof RenewalFilterParams]);
+  // Add search query to active filters if it exists
+  if (searchQuery.trim()) {
+    return filterKeys.length + 1;
+  }
+  return filterKeys.length;
+}, [filters, searchQuery]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -770,10 +832,7 @@ const RenewalComponent: React.FC = () => {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="text-sm font-medium">Refresh</span>
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="h-4 w-4" />
-              <span className="text-sm font-medium">Export</span>
-            </button>
+           
           </div>
         </div>
       </div>

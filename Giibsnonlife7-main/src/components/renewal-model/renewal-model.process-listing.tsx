@@ -46,52 +46,63 @@ const ProcessRenewalListing = () => {
     setLoading(true);
     setMessage(null);
 
-    try {
-      // Generate a unique batch GUID
-      const batchGuid = crypto.randomUUID();
-      
-      // Get current user (you might need to adjust this based on your auth system)
-      const submittedBy = "currentUser"; // Replace with actual user from your auth context
-      
-      // Convert dates to ISO string format for the API
-      const period1ISO = new Date(period1).toISOString();
-      const period2ISO = new Date(period2).toISOString();
-
-      // Make the API call
-      const response = await axios.get("/api/Reports/Renewal-Policy-Process/RunBatchRenewalPoliciesProcess", {
-        params: {
-          period1: period1ISO,
-          period2: period2ISO,
-          batchGuid: batchGuid,
-          submittedBy: submittedBy
+ try {
+    // Use fetch instead of axios to better control response type
+    const response = await fetch(
+      `/api/Reports/Renewal-Policy-Process/RunBatchRenewalPoliciesProcess?` + 
+      new URLSearchParams({
+        period1: period1ISO,
+        period2: period2ISO,
+        batchGuid: batchGuid,
+        submittedBy: submittedBy
+      }),
+      {
+        headers: {
+          'Accept': 'application/json, text/html, */*',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if needed
         }
-      });
-
-      // Handle success
-      if (response.status === 200) {
-        setMessage({ 
-          type: "success", 
-          text: `Process started successfully! Batch GUID: ${batchGuid}` 
-        });
-        console.log("Process response:", response.data);
-        
-        // Optionally reset the form or show additional info
-      } else {
-        setMessage({ 
-          type: "error", 
-          text: `Process failed with status: ${response.status}` 
-        });
       }
-    } catch (error) {
-      console.error("Error starting renewal process:", error);
+    );
+
+    console.log("Response status:", response.status);
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+    
+    // Try to get the response as text first
+    const responseText = await response.text();
+    console.log("Raw response text:", responseText);
+    
+    // Try to parse as JSON if it looks like JSON
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      console.log("Parsed JSON response:", responseData);
+    } catch (e) {
+      console.log("Response is not JSON, showing as text:", responseText);
+      responseData = { message: responseText };
+    }
+
+    if (response.ok) {
+      setMessage({ 
+        type: "success", 
+        text: `Process started! Batch GUID: ${batchGuid}` 
+      });
+      console.log("Full success details:", responseData);
+    } else {
       setMessage({ 
         type: "error", 
-        text: "Failed to start process. Please try again." 
+        text: `Failed: ${response.status} - ${responseData.message || 'Unknown error'}` 
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Network error:", error);
+    setMessage({ 
+      type: "error", 
+      text: "Network error. Check console for details." 
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full">
