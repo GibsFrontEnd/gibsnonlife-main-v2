@@ -15,19 +15,32 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
- 
   BarChart3,
   CheckCircle,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  Send,
+  CheckSquare,
+  Square,
+  Download,
+  AlertCircle
 } from 'lucide-react';
 import { Renewal, RenewalFilterParams } from "../../types/renewal";
 import {
   fetchRenewals,
   filterRenewals,
   setFilters,
+  generateRenewalDocument,
+  sendRenewalEmail,
+  clearDocumentError,
+  clearEmailError,
+  resetDocumentState,
+  resetEmailState
 } from "../../features/reducers/renewalReducers/renewalSlice";
 import { AppDispatch, RootState } from "../../features/store";
+import { toast, ToastContainer } from 'react-toastify';
+
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -58,6 +71,38 @@ const getStatusColor = (status: string): string => {
     'Cancelled': 'bg-gray-100 text-gray-700 border-gray-200',
   };
   return statusColors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+// Helper function to download blob as file
+// Helper function to download blob as file
+const downloadBlob = (blob: Blob, filename: string) => {
+  try {
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    
+    // Append to body
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      window.URL.revokeObjectURL(url);
+    }, 100);
+    
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    // Fallback: Open in new tab
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
 };
 
 // ============================================
@@ -302,13 +347,209 @@ const AdvancedFilters: React.FC<{
 };
 
 // ============================================
-// RENEWAL TABLE COMPONENT
+// BATCH ACTION POPUP COMPONENT (UPDATED)
+// ============================================
+const BatchActionPopup: React.FC<{
+  selectedCount: number;
+  onPreviewDocuments: () => void;
+  onSendMails: () => void;
+  onClearSelection: () => void;
+  documentLoading: boolean;
+  emailLoading: boolean;
+  selectedRenewalsList: Renewal[];
+  onGenerateDocumentSingle: (renewalId: number) => void;
+  onSendEmailSingle: (renewalId: number) => void;
+}> = ({ 
+  selectedCount, 
+  onPreviewDocuments, 
+  onSendMails, 
+  onClearSelection,
+  documentLoading,
+  emailLoading,
+  selectedRenewalsList,
+  onGenerateDocumentSingle,
+  onSendEmailSingle
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const [showIndividualActions, setShowIndividualActions] = useState(false);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setTimeout(() => {
+      onClearSelection();
+    }, 300);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="h-5 w-5 text-blue-600" />
+            <h3 className="font-semibold text-gray-900">
+              {selectedCount} {selectedCount === 1 ? 'Renewal' : 'Renewals'} Selected
+            </h3>
+          </div>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {selectedCount === 1 ? (
+          // Single renewal actions
+          <div className="space-y-2">
+            <button
+              onClick={() => selectedRenewalsList[0] && onGenerateDocumentSingle(Number(selectedRenewalsList[0].renewalID))}
+              disabled={documentLoading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+            >
+              {documentLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download Document
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => selectedRenewalsList[0] && onSendEmailSingle(Number(selectedRenewalsList[0].renewalID))}
+              disabled={emailLoading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
+            >
+              {emailLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Send Email
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+          // Multiple renewals actions
+          <>
+            <div className="space-y-2 mb-3">
+              <button
+                onClick={onPreviewDocuments}
+                disabled={documentLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+              >
+                {documentLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    Generate Documents ({selectedCount})
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={onSendMails}
+                disabled={emailLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
+              >
+                {emailLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Send Emails ({selectedCount})
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <button
+                onClick={() => setShowIndividualActions(!showIndividualActions)}
+                className="w-full flex items-center justify-between text-sm text-gray-600 hover:text-gray-800 mb-2"
+              >
+                <span>Show individual actions</span>
+                <ChevronRight className={`h-4 w-4 transition-transform ${showIndividualActions ? 'rotate-90' : ''}`} />
+              </button>
+
+              {showIndividualActions && (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {selectedRenewalsList.map((renewal) => (
+                    <div key={renewal.renewalID} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{renewal.policyNo}</p>
+                        <p className="text-xs text-gray-500 truncate">{renewal.insuredName}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onGenerateDocumentSingle(Number(renewal.renewalID))}
+                          disabled={documentLoading}
+                          className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                          title="Generate document"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => onSendEmailSingle(Number(renewal.renewalID))}
+                          disabled={emailLoading}
+                          className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
+                          title="Send email"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <button
+            onClick={handleClose}
+            className="w-full text-sm text-gray-600 hover:text-gray-800"
+          >
+            Clear Selection
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// RENEWAL TABLE COMPONENT (UPDATED WITH CHECKBOXES)
 // ============================================
 const RenewalTable: React.FC<{
   renewals: Renewal[];
   loading: boolean;
+  selectedRenewals: Set<string>;
   onRowClick: (renewal: Renewal) => void;
-}> = ({ renewals, loading, onRowClick }) => {
+  onSelectRenewal: (renewalId: string, isSelected: boolean) => void;
+  onSelectAll: (isSelected: boolean) => void;
+}> = ({ renewals, loading, selectedRenewals, onRowClick, onSelectRenewal, onSelectAll }) => {
+  const allSelected = renewals.length > 0 && renewals.every(r => selectedRenewals.has(r.renewalID));
+  const indeterminate = !allSelected && renewals.some(r => selectedRenewals.has(r.renewalID));
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -331,6 +572,19 @@ const RenewalTable: React.FC<{
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-12">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={input => {
+                    if (input) input.indeterminate = indeterminate;
+                  }}
+                  onChange={(e) => onSelectAll(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                />
+              </div>
+            </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Policy No</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Insured</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
@@ -339,37 +593,66 @@ const RenewalTable: React.FC<{
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {renewals.map((renewal) => (
-            <tr
-              key={renewal.renewalID}
-              className="hover:bg-gray-50 transition-colors cursor-pointer"
-              onClick={() => onRowClick(renewal)}
-            >
-              <td className="px-4 py-3">
-                <div className="text-sm font-medium text-gray-900">{renewal.policyNo}</div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="text-sm font-medium text-gray-900">{renewal.insuredName}</div>
-                <div className="text-xs text-gray-500">{renewal.email}</div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="text-xs text-gray-600">
-                  <div>Start: {formatDate(renewal.startDate)}</div>
-                  <div>Expiry: {formatDate(renewal.expiryDate)}</div>
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="text-sm font-semibold text-gray-900">
-                  {formatCurrency(renewal.grossPremium)}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(renewal.tag)}`}>
-                  {renewal.tag || 'N/A'}
-                </span>
-              </td>
-            </tr>
-          ))}
+          {renewals.map((renewal) => {
+            const isSelected = selectedRenewals.has(renewal.renewalID);
+            return (
+              <tr
+                key={renewal.renewalID}
+                className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}
+              >
+                <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      onSelectRenewal(renewal.renewalID, e.target.checked);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                  />
+                </td>
+                <td 
+                  className="px-4 py-3 cursor-pointer"
+                  onClick={() => onRowClick(renewal)}
+                >
+                  <div className="text-sm font-medium text-gray-900">{renewal.policyNo}</div>
+                </td>
+                <td 
+                  className="px-4 py-3 cursor-pointer"
+                  onClick={() => onRowClick(renewal)}
+                >
+                  <div className="text-sm font-medium text-gray-900">{renewal.insuredName}</div>
+                  <div className="text-xs text-gray-500">{renewal.email}</div>
+                </td>
+                <td 
+                  className="px-4 py-3 cursor-pointer"
+                  onClick={() => onRowClick(renewal)}
+                >
+                  <div className="text-xs text-gray-600">
+                    <div>Start: {formatDate(renewal.startDate)}</div>
+                    <div>Expiry: {formatDate(renewal.expiryDate)}</div>
+                  </div>
+                </td>
+                <td 
+                  className="px-4 py-3 cursor-pointer"
+                  onClick={() => onRowClick(renewal)}
+                >
+                  <div className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(renewal.grossPremium)}
+                  </div>
+                </td>
+                <td 
+                  className="px-4 py-3 cursor-pointer"
+                  onClick={() => onRowClick(renewal)}
+                >
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(renewal.tag)}`}>
+                    {renewal.tag || 'N/A'}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -419,19 +702,22 @@ const Pagination: React.FC<{
 };
 
 // ============================================
-// RENEWAL DETAILS MODAL (UPDATED)
+// RENEWAL DETAILS MODAL
 // ============================================
 const RenewalDetailsModel: React.FC<{
   renewal: Renewal;
   onClose: () => void;
-  onRenewalUpdated: () => void; // Add this prop to trigger refresh
-}> = ({ renewal, onClose, onRenewalUpdated }) => {
+  onRenewalUpdated: () => void;
+  onGenerateDocument: (renewalId: number) => Promise<void>;
+  onSendEmail: (renewalId: number) => Promise<void>;
+  documentLoading: boolean;
+  emailLoading: boolean;
+}> = ({ renewal, onClose, onRenewalUpdated, onGenerateDocument, onSendEmail, documentLoading, emailLoading }) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  // Handle successful save and trigger refresh
   const handleSaveSuccess = () => {
     setIsEditing(false);
-    onRenewalUpdated(); // Trigger refresh in parent component
+    onRenewalUpdated();
   };
 
   if (isEditing) {
@@ -439,7 +725,7 @@ const RenewalDetailsModel: React.FC<{
       <EditRenewalModel
         renewal={renewal}
         onClose={() => setIsEditing(false)}
-        onSaveSuccess={handleSaveSuccess} // Pass the success handler
+        onSaveSuccess={handleSaveSuccess}
       />
     );
   }
@@ -574,17 +860,55 @@ const RenewalDetailsModel: React.FC<{
         </div>
 
         <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 space-y-2">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="w-full py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
-          >
-            <CheckCircle className="h-4 w-4" />
-            Edit Renewal
-          </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <button
+              onClick={() => onGenerateDocument(Number(renewal.renewalID))}
+              disabled={documentLoading}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+            >
+              {documentLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Generate Document
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => onSendEmail(Number(renewal.renewalID))}
+              disabled={emailLoading}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
+            >
+              {emailLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Send Email
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Edit Renewal
+            </button>
+          </div>
 
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           >
             Close
           </button>
@@ -595,14 +919,15 @@ const RenewalDetailsModel: React.FC<{
 };
 
 // ============================================
-// STATS CARDS COMPONENT (UPDATED)
+// STATS CARDS COMPONENT
 // ============================================
 const StatsCards: React.FC<{
   total: number;
   filtered: number;
   activeFilters: number;
   lastUpdated?: string;
-}> = ({ total, filtered, activeFilters, lastUpdated }) => {
+  selectedCount: number;
+}> = ({ total, filtered, activeFilters, lastUpdated, selectedCount }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
       <div className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-300 hover:transform hover:-translate-y-0.5 hover:shadow-lg">
@@ -641,6 +966,8 @@ const StatsCards: React.FC<{
         </div>
       </div>
 
+    
+
       <div className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-300 hover:transform hover:-translate-y-0.5 hover:shadow-lg">
         <div className="flex items-center justify-between">
           <div>
@@ -649,8 +976,8 @@ const StatsCards: React.FC<{
               {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Just now'}
             </p>
           </div>
-          <div className="p-3 bg-amber-100 rounded-lg">
-            <Clock className="h-6 w-6 text-amber-600" />
+          <div className="p-3 bg-red-100 rounded-lg">
+            <Clock className="h-6 w-6 text-red-600" />
           </div>
         </div>
       </div>
@@ -659,7 +986,7 @@ const StatsCards: React.FC<{
 };
 
 // ============================================
-// MAIN RENEWAL COMPONENT (UPDATED)
+// MAIN RENEWAL COMPONENT (UPDATED WITH API INTEGRATION)
 // ============================================
 const RenewalComponent: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -667,101 +994,257 @@ const RenewalComponent: React.FC = () => {
   
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRenewal, setSelectedRenewal] = useState<Renewal | null>(null);
+  const [selectedRenewalIds, setSelectedRenewalIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
+  // Extract loading states and errors from Redux state
   const renewals = renewalState.data || [];
   const loading = renewalState.loading;
+  const documentLoading = renewalState.documentLoading || false;
+  const emailLoading = renewalState.emailLoading || false;
+  const documentError = renewalState.documentError;
+  const emailError = renewalState.emailError;
   const error = renewalState.error;
   const filters = renewalState.filters || {};
   
   const pagination = {
     page: renewalState.pagination?.currentPage || 1,
-    pageSize: renewalState.pagination?.pageSize || 10,
+    pageSize: renewalState.pagination?.pageSize || 20,
     total: renewalState.pagination?.totalCount || 0,
     totalPages: renewalState.pagination?.totalPages || 1,
   };
 
   // Initial fetch
   useEffect(() => {
-    dispatch(fetchRenewals({ page: 1, pageSize: 10 }));
+    dispatch(fetchRenewals({ page: 1, pageSize: 20 }));
     setLastUpdated(new Date().toISOString());
   }, [dispatch]);
 
+  // Clear document/email errors on unmount
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      console.log('🔄 Auto-refreshing renewals...');
+    return () => {
+      dispatch(resetDocumentState());
+      dispatch(resetEmailState());
+    };
+  }, [dispatch]);
+
+  // Handle document generation for a single renewal
+  const handleGenerateDocument = useCallback(async (renewalId: number) => {
+    try {
+      const result = await dispatch(generateRenewalDocument(renewalId)).unwrap();
+      
+      // Download the document
+      downloadBlob(result.blob, result.filename);
+      
+      // Show success toast
+      toast.success(`Document generated successfully: ${result.filename}`, {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      
+      // Update last updated time
+      setLastUpdated(new Date().toISOString());
+      
+    } catch (error: any) {
+      toast.error(`Failed to generate document: ${error.message || 'Unknown error'}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+      console.error('Document generation failed:', error);
+    }
+  }, [dispatch]);
+
+  // Handle send email for a single renewal
+  const handleSendEmail = useCallback(async (renewalId: number) => {
+    try {
+      const result = await dispatch(sendRenewalEmail(renewalId)).unwrap();
+      
+      // Show success toast
+      toast.success(`Email sent successfully for renewal ID: ${renewalId}`, {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      
+      // Refresh the data to update email status
       dispatch(fetchRenewals({ 
         ...filters, 
         page: pagination.page, 
         pageSize: pagination.pageSize 
       }));
+      
+      // Update last updated time
       setLastUpdated(new Date().toISOString());
-    }, 30000); // Refresh every 30 seconds (30000 milliseconds)
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(intervalId);
+      
+    } catch (error: any) {
+      toast.error(`Failed to send email: ${error.message || 'Unknown error'}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+      console.error('Email sending failed:', error);
+    }
   }, [dispatch, filters, pagination.page, pagination.pageSize]);
 
-// In your RenewalComponent.tsx
-// Handle search
-// Handle search - improved version that can search both
-const handleSearch = useCallback((query: string) => {
-  setSearchQuery(query);
-  
-  if (!query.trim()) {
-    // If empty search, fetch all with pagination
-    dispatch(fetchRenewals({ page: 1, pageSize: 10 }));
-    return;
-  }
-  
-  // Start with empty search params
-  let searchParams: RenewalFilterParams = {};
-  
-  // Try to detect if it's a policy number
-  const isLikelyPolicyNumber = 
-    query.includes('/') || // Contains slashes
-    /^[A-Z]{2,3}\/\w+\/\w+/.test(query) || // Pattern like XXX/XXX/XXX
-    /^[A-Z]{2,}\d+$/.test(query) || // Pattern like ABC123
-    query.match(/^[A-Z]+\/[A-Z]+\/[A-Z]+\/\d+$/); // Full pattern
-  
-  if (isLikelyPolicyNumber) {
-    // Search by policy number first
-    searchParams.policyNo = query;
-    console.log('🔍 Searching by Policy Number:', query);
-  } else {
-    // Search by insured name
-    searchParams.insuredName = query;
-    console.log('🔍 Searching by Insured Name:', query);
-  }
-  
-  console.log('🔍 Executing search with:', searchParams);
-  
-  dispatch(setFilters(searchParams));
-  dispatch(filterRenewals(searchParams));
-  
-  setLastUpdated(new Date().toISOString());
-}, [dispatch]);
+  // Handle batch document generation for multiple renewals
+  const handleBatchGenerateDocuments = useCallback(async () => {
+    const selectedRenewalsList = renewals.filter(r => selectedRenewalIds.has(r.renewalID));
+    
+    if (selectedRenewalsList.length === 0) {
+      toast.warning('Please select at least one renewal', {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      return;
+    }
 
-// Handle filter apply
-const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
-  dispatch(setFilters(newFilters));
-  
-  // Remove page/pageSize for filter endpoint
-  const filterParams = { ...newFilters }; // Different variable name
-  delete filterParams.page;
-  delete filterParams.pageSize;
-  
-  dispatch(filterRenewals(filterParams));
-  setLastUpdated(new Date().toISOString());
-}, [dispatch, pagination.pageSize]);
+    try {
+      toast.info(`Generating documents for ${selectedRenewalsList.length} renewal(s)...`, {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
 
-  // // Handle filter apply
-  // const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
-  //   dispatch(setFilters(newFilters));
-  //   dispatch(filterRenewals({ ...newFilters, page: 1, pageSize: pagination.pageSize }));
-  //   setLastUpdated(new Date().toISOString());
-  // }, [dispatch, pagination.pageSize]);
+      // Generate documents sequentially to avoid overwhelming the server
+      for (const renewal of selectedRenewalsList) {
+        try {
+          const result = await dispatch(generateRenewalDocument(Number(renewal.renewalID))).unwrap();
+          downloadBlob(result.blob, result.filename);
+          
+          // Small delay between requests
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (error) {
+          console.error(`Failed to generate document for renewal ${renewal.renewalID}:`, error);
+          toast.warning(`Failed to generate document for ${renewal.policyNo}`, {
+            position: "bottom-right",
+            autoClose: 3000,
+          });
+        }
+      }
+
+      toast.success(`Documents generated for ${selectedRenewalsList.length} renewal(s)`, {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      
+      // Update last updated time
+      setLastUpdated(new Date().toISOString());
+      
+    } catch (error: any) {
+      toast.error(`Batch document generation failed: ${error.message || 'Unknown error'}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+      console.error('Batch document generation failed:', error);
+    }
+  }, [dispatch, renewals, selectedRenewalIds]);
+
+  // Handle batch email sending for multiple renewals
+  const handleBatchSendEmails = useCallback(async () => {
+    const selectedRenewalsList = renewals.filter(r => selectedRenewalIds.has(r.renewalID));
+    
+    if (selectedRenewalsList.length === 0) {
+      toast.warning('Please select at least one renewal', {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      toast.info(`Sending emails for ${selectedRenewalsList.length} renewal(s)...`, {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
+
+      // Send emails sequentially
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const renewal of selectedRenewalsList) {
+        try {
+          await dispatch(sendRenewalEmail(Number(renewal.renewalID))).unwrap();
+          successCount++;
+          
+          // Small delay between requests
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to send email for renewal ${renewal.renewalID}:`, error);
+        }
+      }
+
+      // Refresh the data to update email statuses
+      dispatch(fetchRenewals({ 
+        ...filters, 
+        page: pagination.page, 
+        pageSize: pagination.pageSize 
+      }));
+
+      // Show summary toast
+      if (failCount === 0) {
+        toast.success(`Successfully sent ${successCount} email(s)`, {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      } else {
+        toast.warning(`Sent ${successCount} email(s), failed to send ${failCount} email(s)`, {
+          position: "bottom-right",
+          autoClose: 5000,
+        });
+      }
+      
+      // Update last updated time
+      setLastUpdated(new Date().toISOString());
+      
+    } catch (error: any) {
+      toast.error(`Batch email sending failed: ${error.message || 'Unknown error'}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+      console.error('Batch email sending failed:', error);
+    }
+  }, [dispatch, renewals, selectedRenewalIds, filters, pagination.page, pagination.pageSize]);
+
+  // Handle search
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      dispatch(fetchRenewals({ page: 1, pageSize: 20 }));
+      return;
+    }
+    
+    let searchParams: RenewalFilterParams = {};
+    
+    const isLikelyPolicyNumber = 
+      query.includes('/') ||
+      /^[A-Z]{2,3}\/\w+\/\w+/.test(query) ||
+      /^[A-Z]{2,}\d+$/.test(query) ||
+      query.match(/^[A-Z]+\/[A-Z]+\/[A-Z]+\/\d+$/);
+    
+    if (isLikelyPolicyNumber) {
+      searchParams.policyNo = query;
+    } else {
+      searchParams.insuredName = query;
+    }
+    
+    dispatch(setFilters(searchParams));
+    dispatch(filterRenewals(searchParams));
+    setLastUpdated(new Date().toISOString());
+  }, [dispatch]);
+
+  // Handle filter apply
+  const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
+    dispatch(setFilters(newFilters));
+    
+    const filterParams = { ...newFilters };
+    delete filterParams.page;
+    delete filterParams.pageSize;
+    
+    dispatch(filterRenewals(filterParams));
+    setLastUpdated(new Date().toISOString());
+  }, [dispatch, pagination.pageSize]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
@@ -774,23 +1257,55 @@ const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
     setSelectedRenewal(renewal);
   }, []);
 
+  // Handle renewal selection
+  const handleSelectRenewal = useCallback((renewalId: string, isSelected: boolean) => {
+    setSelectedRenewalIds(prev => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        // Check if we can select more (max 10)
+        if (newSet.size < 20) {
+          newSet.add(renewalId);
+        } else {
+          toast.warning('You can select a maximum of 20 renewals at once.', {
+            position: "bottom-right",
+            autoClose: 3000,
+          });
+        }
+      } else {
+        newSet.delete(renewalId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Handle select all
+  const handleSelectAll = useCallback((isSelected: boolean) => {
+    if (isSelected) {
+      // Only select up to 20 items
+      const maxToSelect = Math.min(20, renewals.length);
+      const selectedIds = new Set(renewals.slice(0, maxToSelect).map(r => r.renewalID));
+      setSelectedRenewalIds(selectedIds);
+      
+      if (maxToSelect < renewals.length) {
+        toast.info(`Only ${maxToSelect} renewals can be selected at once (max 20).`, {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      }
+    } else {
+      setSelectedRenewalIds(new Set());
+    }
+  }, [renewals]);
+
   // Handle refresh after edit
   const handleRenewalUpdated = useCallback(() => {
-    // Refresh data from server
     dispatch(fetchRenewals({ 
       ...filters, 
       page: pagination.page, 
       pageSize: pagination.pageSize 
     }));
-    
-    // Update last updated timestamp
     setLastUpdated(new Date().toISOString());
-    
-    // Close the modal
     setSelectedRenewal(null);
-    
-    // Optional: Show success message
-    console.log('✅ Renewal updated, refreshing data...');
   }, [dispatch, filters, pagination.page, pagination.pageSize]);
 
   // Manual refresh function
@@ -801,21 +1316,66 @@ const handleFilterApply = useCallback((newFilters: RenewalFilterParams) => {
       pageSize: pagination.pageSize 
     }));
     setLastUpdated(new Date().toISOString());
+    
+    // Clear any document/email errors
+    dispatch(clearDocumentError());
+    dispatch(clearEmailError());
+    
+    toast.info('Data refreshed', {
+      position: "bottom-right",
+      autoClose: 2000,
+    });
   }, [dispatch, filters, pagination.page, pagination.pageSize]);
 
+  // Clear selection
+  const handleClearSelection = useCallback(() => {
+    setSelectedRenewalIds(new Set());
+    toast.info('Selection cleared', {
+      position: "bottom-right",
+      autoClose: 2000,
+    });
+  }, []);
+
+  // Get selected renewals list
+  const selectedRenewalsList = useMemo(() => {
+    return renewals.filter(r => selectedRenewalIds.has(r.renewalID));
+  }, [renewals, selectedRenewalIds]);
+
   // Active filters count
-// In your RenewalComponent.tsx, update the activeFilterCount calculation:
-const activeFilterCount = useMemo(() => {
-  const filterKeys = Object.keys(filters).filter(k => filters[k as keyof RenewalFilterParams]);
-  // Add search query to active filters if it exists
-  if (searchQuery.trim()) {
-    return filterKeys.length + 1;
-  }
-  return filterKeys.length;
-}, [filters, searchQuery]);
+  const activeFilterCount = useMemo(() => {
+    const filterKeys = Object.keys(filters).filter(k => filters[k as keyof RenewalFilterParams]);
+    if (searchQuery.trim()) {
+      return filterKeys.length + 1;
+    }
+    return filterKeys.length;
+  }, [filters, searchQuery]);
+
+  // Show error toasts for document/email errors
+  useEffect(() => {
+    if (documentError) {
+      toast.error(`Document error: ${documentError}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+      dispatch(clearDocumentError());
+    }
+  }, [documentError, dispatch]);
+
+  useEffect(() => {
+    if (emailError) {
+      toast.error(`Email error: ${emailError}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+      dispatch(clearEmailError());
+    }
+  }, [emailError, dispatch]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Toast Container */}
+      <ToastContainer />
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -832,7 +1392,6 @@ const activeFilterCount = useMemo(() => {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="text-sm font-medium">Refresh</span>
             </button>
-           
           </div>
         </div>
       </div>
@@ -853,6 +1412,7 @@ const activeFilterCount = useMemo(() => {
           filtered={renewals.length}
           activeFilters={activeFilterCount}
           lastUpdated={lastUpdated}
+          selectedCount={selectedRenewalIds.size}
         />
 
         {/* Search Bar */}
@@ -878,7 +1438,10 @@ const activeFilterCount = useMemo(() => {
           <RenewalTable
             renewals={renewals}
             loading={loading}
+            selectedRenewals={selectedRenewalIds}
             onRowClick={handleRowClick}
+            onSelectRenewal={handleSelectRenewal}
+            onSelectAll={handleSelectAll}
           />
           <Pagination
             currentPage={pagination.page}
@@ -890,12 +1453,31 @@ const activeFilterCount = useMemo(() => {
         </div>
       </div>
 
+      {/* Batch Action Popup */}
+      {selectedRenewalIds.size > 0 && (
+        <BatchActionPopup
+          selectedCount={selectedRenewalIds.size}
+          onPreviewDocuments={handleBatchGenerateDocuments}
+          onSendMails={handleBatchSendEmails}
+          onClearSelection={handleClearSelection}
+          documentLoading={documentLoading}
+          emailLoading={emailLoading}
+          selectedRenewalsList={selectedRenewalsList}
+          onGenerateDocumentSingle={handleGenerateDocument}
+          onSendEmailSingle={handleSendEmail}
+        />
+      )}
+
       {/* Details Modal */}
       {selectedRenewal && (
         <RenewalDetailsModel
           renewal={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
-          onRenewalUpdated={handleRenewalUpdated} // Pass refresh function
+          onRenewalUpdated={handleRenewalUpdated}
+          onGenerateDocument={handleGenerateDocument}
+          onSendEmail={handleSendEmail}
+          documentLoading={documentLoading}
+          emailLoading={emailLoading}
         />
       )}
     </div>

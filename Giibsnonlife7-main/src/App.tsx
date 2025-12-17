@@ -35,6 +35,7 @@ import RenewalComponent from "./pages/renewal/RenewalComponent";
 // Import renewal model components
 import CSURenewalModel from "./pages/renewal/Renewal-model";
 import EditRenewalModel from "./pages/renewal/EditRenewalModel";
+import SessionTimeoutModal from "./components/SessionTimeoutModal";
 
 const App: React.FC = () => {
   useAuth();
@@ -43,6 +44,7 @@ const App: React.FC = () => {
   return (
     <>
       <Toaster />
+       <SessionTimeoutModal />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />

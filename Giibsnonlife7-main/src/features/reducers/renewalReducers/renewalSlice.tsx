@@ -17,7 +17,46 @@ const initialState = {
   loading: false,
   error: null,
   selectedRenewal: null,
-  filters: {}
+  filters: {},
+  // New states for document generation and email sending
+  documentLoading: false,
+  documentError: null,
+  emailLoading: false,
+  emailError: null
+};
+
+// Helper function to extract filename from response headers
+const extractFilenameFromHeaders = (headers: any) => {
+  const contentDisposition = headers['content-disposition'] || headers['Content-Disposition'];
+  if (contentDisposition) {
+    // Try to match filename in quotes first, then without quotes
+    const matches = contentDisposition.match(/filename\*?=["']?([^"']+)["']?/i);
+    if (matches && matches[1]) {
+      // Decode URI encoded filename
+      const filename = matches[1];
+      if (filename.startsWith("UTF-8''")) {
+        return decodeURIComponent(filename.substring(7));
+      }
+      return filename;
+    }
+    
+    // Alternative pattern
+    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    if (filenameMatch && filenameMatch[1]) {
+      let filename = filenameMatch[1].replace(/['"]/g, '');
+      // Decode if URI encoded
+      if (filename.includes('%')) {
+        filename = decodeURIComponent(filename);
+      }
+      return filename;
+    }
+  }
+  
+  // Try to get filename from response URL
+  const urlMatch = headers['x-filename'] || headers['X-Filename'];
+  if (urlMatch) return urlMatch;
+  
+  return null;
 };
 
 // =========================
@@ -39,7 +78,7 @@ export const fetchRenewals = createAsyncThunk(
 
 // =========================
 // UPDATE RENEWAL
-// In renewalSlice.ts
+// =========================
 export const updateRenewal = createAsyncThunk(
   'renewal/updateRenewal',
   async ({ id, data }: { id: number; data: any }, { rejectWithValue }) => {
@@ -54,7 +93,7 @@ export const updateRenewal = createAsyncThunk(
 
       console.log("Final request body:", requestData);
 
-      // FIX: Changed ID to id (lowercase)
+      // Changed ID to id (lowercase)
       const response = await apiCall.put(`/Renewal/${id}`, requestData);   // ✅ FIXED
     
 
@@ -68,8 +107,84 @@ export const updateRenewal = createAsyncThunk(
   }
 );
 
+// =========================
+// GENERATE RENEWAL DOCUMENT
+// =========================
+export const generateRenewalDocument = createAsyncThunk(
+  'renewals/generateDocument',
+  async (renewalId: number, { rejectWithValue }) => {
+    try {
+      console.log(`Generating document for renewal ID: ${renewalId}`);
+      
+      /**
+       * Makes a POST request to generate a Word document for a specific renewal.
+       * The API returns a file download (application/vnd.openxmlformats-officedocument.wordprocessingml.document)
+       * 
+       * @param {number} renewalId - The ID of the renewal to generate document for
+       * @returns {Promise<Object>} - Returns the file blob and filename
+       */
+      
+      // Set responseType to 'blob' to handle file download
+      const response = await apiCall.post(
+        `/Renewal/generate-document/${renewalId}`,
+        {}, // Empty body as per API spec
+        {
+          responseType: 'blob' // Important for file downloads
+        }
+      );
+      
+      console.log("Document generation successful, blob size:", response.data.size);
+      
+      // Extract filename from headers
+      const filename = extractFilenameFromHeaders(response.headers) || `Renewal_Notice_${renewalId}.docx`;
+      
+      return {
+        blob: response.data,
+        filename: filename,
+        renewalId: renewalId
+      };
+      
+    } catch (error: any) {
+      console.error(`Document generation failed for renewal ID ${renewalId}:`, error);
+      return rejectWithValue(error.response?.data || error.message || 'Failed to generate document');
+    }
+  }
+);
 
-
+// =========================
+// SEND RENEWAL EMAIL
+// =========================
+export const sendRenewalEmail = createAsyncThunk(
+  'renewals/sendEmail',
+  async (renewalId: number, { rejectWithValue }) => {
+    try {
+      console.log(`Sending email for renewal ID: ${renewalId}`);
+      
+      /**
+       * Makes a POST request to send a renewal notice email for a specific renewal.
+       * The API triggers email sending with the renewal details.
+       * 
+       * @param {number} renewalId - The ID of the renewal to send email for
+       * @returns {Promise<Object>} - Returns success response from API
+       */
+      
+      const response = await apiCall.post(
+        `/Renewal/send-email/${renewalId}`,
+        {} // Empty body as per API spec
+      );
+      
+      console.log("Email sent successfully:", response.data);
+      return {
+        ...response.data,
+        renewalId
+      };
+      
+    } catch (error: any) {
+      console.error(`Email sending failed for renewal ID ${renewalId}:`, error);
+      return rejectWithValue(error.response?.data || error.message || 'Failed to send email');
+    }
+  }
+);
 
 // =========================
 // FILTER RENEWALS
@@ -130,6 +245,21 @@ const renewalSlice = createSlice({
     },
     clearFilters: (state) => {
       state.filters = {};
+    },
+    // New reducers for document and email operations
+    clearDocumentError: (state) => {
+      state.documentError = null;
+    },
+    clearEmailError: (state) => {
+      state.emailError = null;
+    },
+    resetDocumentState: (state) => {
+      state.documentLoading = false;
+      state.documentError = null;
+    },
+    resetEmailState: (state) => {
+      state.emailLoading = false;
+      state.emailError = null;
     }
   },
 
@@ -183,6 +313,99 @@ const renewalSlice = createSlice({
       .addCase(updateRenewal.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      });
+
+    // =============================
+    // GENERATE RENEWAL DOCUMENT
+    // =============================
+    builder
+      .addCase(generateRenewalDocument.pending, (state) => {
+        state.documentLoading = true;
+        state.documentError = null;
+      })
+      .addCase(generateRenewalDocument.fulfilled, (state, action) => {
+        state.documentLoading = false;
+        state.documentError = null;
+        
+        /**
+         * The action.payload contains:
+         * - blob: The file data (Word document)
+         * - filename: The suggested filename for download
+         * - renewalId: The ID of the renewal
+         * 
+         * Note: Since this is a file download, we don't update the state data.
+         * The file should be handled by the component that dispatched the action.
+         */
+        
+        console.log(`Document generated successfully for renewal ID: ${action.payload.renewalId}`);
+        
+        // Optional: Update the renewal record to indicate document was generated
+        const index = state.data.findIndex(
+          (r) => r.renewalID === action.payload.renewalId.toString()
+        );
+        
+        if (index !== -1) {
+          state.data[index] = {
+            ...state.data[index],
+            lastDocumentGenerated: new Date().toISOString()
+          };
+        }
+      })
+      .addCase(generateRenewalDocument.rejected, (state, action) => {
+        state.documentLoading = false;
+        state.documentError = action.payload as string;
+        console.error('Document generation failed:', action.payload);
+      });
+
+    // =============================
+    // SEND RENEWAL EMAIL
+    // =============================
+    builder
+      .addCase(sendRenewalEmail.pending, (state) => {
+        state.emailLoading = true;
+        state.emailError = null;
+      })
+      .addCase(sendRenewalEmail.fulfilled, (state, action) => {
+        state.emailLoading = false;
+        state.emailError = null;
+        
+        /**
+         * Email sent successfully.
+         * Update the renewal record in our state
+         * to reflect that an email was sent
+         */
+        
+        const { renewalId, ...emailResponse } = action.payload;
+        
+        // Update the renewal record in the list if it exists
+        const index = state.data.findIndex(
+          (r) => r.renewalID === renewalId.toString()
+        );
+        
+        if (index !== -1) {
+          // Add email sent timestamp to the renewal record
+          state.data[index] = {
+            ...state.data[index],
+            lastEmailSent: new Date().toISOString(),
+            emailStatus: 'sent'
+          };
+        }
+        
+        // Update selected renewal if it matches
+        if (state.selectedRenewal && state.selectedRenewal.renewalID === renewalId.toString()) {
+          state.selectedRenewal = {
+            ...state.selectedRenewal,
+            lastEmailSent: new Date().toISOString(),
+            emailStatus: 'sent'
+          };
+        }
+        
+        console.log(`Email sent successfully for renewal ID: ${renewalId}`, emailResponse);
+      })
+      .addCase(sendRenewalEmail.rejected, (state, action) => {
+        state.emailLoading = false;
+        state.emailError = action.payload as string;
+        console.error('Email sending failed:', action.payload);
       });
 
     // =============================
@@ -269,7 +492,11 @@ export const {
   clearRenewals,
   setSelectedRenewal,
   setFilters,
-  clearFilters
+  clearFilters,
+  clearDocumentError,
+  clearEmailError,
+  resetDocumentState,
+  resetEmailState
 } = renewalSlice.actions;
 
 export default renewalSlice.reducer;
